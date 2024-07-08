@@ -40,6 +40,16 @@ class TestCalculations(unittest.TestCase):
       array = [-10, -5, 0, 5, 10]
       target = -5
       self.assertEqual(binary_search(target, array), 1)
+  
+  def test_with_large_array(self):
+      array = [i for i in range(1000000)]
+      target = 999999
+      self.assertEqual(binary_search(target, array), 999999)
+  
+  def test_with_array_of_length_one(self):
+      array = [1]
+      target = 1
+      self.assertEqual(binary_search(target, array), 0)
 
 if __name__ == '__main__':
   unittest.main()
