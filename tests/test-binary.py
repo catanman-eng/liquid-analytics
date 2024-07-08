@@ -13,7 +13,7 @@ class TestCalculations(unittest.TestCase):
   def test_empty_array(self):
     array = []
     target = 5
-    self.assertEqual(binary_search(target, array), 1) 
+    self.assertEqual(binary_search(target, array), -1) 
 
   def test_target_not_in_array(self):
     target = 6
