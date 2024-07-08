@@ -1,8 +1,5 @@
 import unittest
 from Binary_Search.helpers import binary_search
-import sys
-
-sys.path.insert(0, './src')
 
 class TestCalculations(unittest.TestCase):
 
