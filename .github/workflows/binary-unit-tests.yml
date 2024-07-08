@@ -29,20 +29,4 @@ jobs:
     - name: Run unit tests
       run: |
         python -m unittest tests.test-binary  -v
-    
-    - name: Check test results
-      if: always()
-      uses: actions/github-script@v5
-      with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const checkRuns = await github.actions.listJobsForWorkflowRun({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId
-            });
-
-            const allJobsSucceeded = checkRuns.jobs.every(job => job.conclusion === 'success');
-            if (!allJobsSucceeded) {
-              core.setFailed('Some jobs failed');
-            }
+  
