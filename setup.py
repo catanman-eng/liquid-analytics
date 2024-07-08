@@ -4,6 +4,7 @@ setup(
     name="liquid_analytics",
     version="0.1.0",
     packages=find_packages(),
+    test_suite="tests",
     install_requires=[
         # Add your dependencies here
     ],
