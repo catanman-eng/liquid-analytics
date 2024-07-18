@@ -47,9 +47,15 @@ def ternary_search(target: int, arr: List[int]) -> int:
 
     return -1
 
-def run_search_algorithm(algorithm: str, target: int, array: List[int]) -> int:
-    setup_code = f"from helpers import {algorithm}"
+def run_search_algorithm(algorithm: str, target: int, array: List[int], repeat_val = 1, number = 10) -> float:
+    setup_code = f"from search_helpers import {algorithm}"
     stmt = f"{algorithm}({target}, {array})"
-    times = repeat(setup=setup_code, stmt=stmt, repeat=3, number=10)
-
+    
+    print(f"Executing: {algorithm}, {repeat_val * number} times")
+    times = repeat(setup=setup_code, stmt=stmt, repeat=repeat_val, number=number)
     print(f"Algorithm: {algorithm}. Minimum execution time: {min(times)}")
+    return min(times)
+
+def add_row_to_table(table, algo, min_time):
+    table.add_row(algo.replace("_", " ").title(), f"{min_time:.5f}")
+    return table
