@@ -3,7 +3,7 @@ name: Binary Search Unit Tests
 on:
   push:
     branches:
-      - 'binary-search/*'
+      - '*'
   pull_request:
     branches:
       - 'main'
