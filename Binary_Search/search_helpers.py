@@ -1,7 +1,10 @@
-from typing import List
+from typing import List, Callable
 from timeit import repeat
+from tqdm import tqdm
+
 
 def binary_search(target: int, arr: List[int]) -> int:
+    """Performs binary search on a sorted array to find the target."""
     left = 0
     right = len(arr) - 1
 
@@ -17,13 +20,17 @@ def binary_search(target: int, arr: List[int]) -> int:
 
     return -1
 
+
 def linear_search(target: int, arr: List[int]) -> int:
+    """Performs linear search on an array to find the target."""
     for i in range(len(arr)):
         if arr[i] == target:
             return i
     return -1
 
+
 def ternary_search(target: int, arr: List[int]) -> int:
+    """Performs ternary search on a sorted array to find the target."""
     left = 0
     right = len(arr) - 1
 
@@ -47,15 +54,42 @@ def ternary_search(target: int, arr: List[int]) -> int:
 
     return -1
 
-def run_search_algorithm(algorithm: str, target: int, array: List[int], repeat_val = 1, number = 10) -> float:
-    setup_code = f"from search_helpers import {algorithm}"
-    stmt = f"{algorithm}({target}, {array})"
-    
-    print(f"Executing: {algorithm}, {repeat_val * number} times")
-    times = repeat(setup=setup_code, stmt=stmt, repeat=repeat_val, number=number)
-    print(f"Algorithm: {algorithm}. Minimum execution time: {min(times)}")
-    return min(times)
+
+def run_search_algorithm(
+    algorithm: Callable[[int, List[int]], int],
+    target: int,
+    array: List[int],
+    repeat_val: int = 3,
+    number: int =10,
+) -> float:
+    """Runs the given search algorithm and returns the minimum execution time."""
+    setup_code = f"from search_helpers import {algorithm.__name__}"
+    stmt = f"{algorithm.__name__}({target}, {array})"
+
+    algo_name = remove_underscores_and_capitalize(algorithm.__name__)
+
+    print(f"Executing: {algo_name}, {repeat_val * number} times")
+    total_iterations = repeat_val * number
+    times = []
+
+    with tqdm(total=total_iterations) as pbar:
+        for _ in range(repeat_val):
+            time = repeat(setup=setup_code, stmt=stmt, number=number)
+            times.extend(time)
+            pbar.update(number)
+
+    min_time = min(times)
+
+    print(f"Algorithm: {algo_name}. Minimum execution time: {min_time:.5f} seconds")
+    return min_time
+
 
 def add_row_to_table(table, algo, min_time):
-    table.add_row(algo.replace("_", " ").title(), f"{min_time:.5f}")
+    """Adds a row to the Rich table with the algorithm name and minimum time."""
+    algo_name = remove_underscores_and_capitalize(algo)
+    table.add_row(algo_name, f"{min_time:.5f}")
     return table
+
+def remove_underscores_and_capitalize(string : str) -> str:
+    """Replaces underscores with spaces and capitalizes the first letter of each word."""
+    return string.replace("_", " ").title()

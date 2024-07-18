@@ -5,7 +5,11 @@ from rich.table import Table
 
 
 def main():
-    algorithms = ["binary_search", "linear_search", "ternary_search"]
+    algorithms = {
+        "binary_search": search_helpers.binary_search,
+        "linear_search": search_helpers.linear_search,
+        "ternary_search": search_helpers.ternary_search,
+    }
 
     # Sorted array of length n
     n, target = get_user_input()    
@@ -17,10 +21,10 @@ def main():
     
     # Perform search for each algorithm
     print(f"Target: {target} in sorted array of length {n}\n")
-    for algo in algorithms:
-        min_time = search_helpers.run_search_algorithm(algo, target, sorted_array)
-        table = search_helpers.add_row_to_table(table, algo, min_time)
-    
+    for algo_name, algo_func in algorithms.items():
+        min_time = search_helpers.run_search_algorithm(algo_func, target, sorted_array)
+        table = search_helpers.add_row_to_table(table, algo_name, min_time)
+
     console = Console()
     console.print(table)
 
