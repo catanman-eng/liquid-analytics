@@ -1,5 +1,5 @@
 from typing import Callable
-from utils import Utils
+from controllers.helpers import Helper
 
 def handle_database_errors(func: Callable[..., any]) -> Callable[..., any]:
     def wrapper(*args, **kwargs) -> any:
@@ -13,6 +13,7 @@ class UserController:
   def __init__(self, con):
     self.con = con
     self.create_users_table()
+    self.utils = Helper()
   
   @handle_database_errors
   def create_users_table(self):
@@ -31,7 +32,7 @@ class UserController:
   @handle_database_errors
   def add_user(self, username):
     if not self.check_user_exists(username):
-        user_id = Utils.generate_guid()
+        user_id = self.utils.generate_guid()
         self.con.execute("INSERT INTO users VALUES (?, ?)", [user_id, username])
         print(f"User {username} added successfully")
         return True

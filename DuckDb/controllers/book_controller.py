@@ -1,6 +1,6 @@
 from typing import Callable
-from utils import Utils
-from user_controller import UserController
+from controllers.helpers import Helper
+from controllers.user_controller import UserController
 
 def handle_database_errors(func: Callable[..., any]) -> Callable[..., any]:
     def wrapper(*args, **kwargs) -> any:
@@ -15,9 +15,11 @@ class BookController:
     def __init__(self, con):
         self.con = con
         self.sportsbooks = ["bet365", "caesars", "draftkings", "fanduel"]
+        self.user_controller = UserController(con)
+        self.helper = Helper()
+        
         self.create_books_table()
         self.create_books_user_table()
-        self.user_controller = UserController(con)
 
     @handle_database_errors
     def create_books_user_table(self):
@@ -39,14 +41,14 @@ class BookController:
     @handle_database_errors
     def add_book_to_user(self, book_name, username):
         book_id = self.get_book_id(book_name)
-        user_id = UserController.get_user_id(username)
+        user_id = self.user_controller.get_user_id(username)
         self.con.execute("INSERT INTO books_users VALUES (?, ?)", [book_id, user_id])
         print(f"Book {book_name} added to user {user_id} successfully")
 
     @handle_database_errors
     def remove_book_from_user(self, book_name, username):
         book_id = self.get_book_id(book_name)
-        user_id = UserController.get_user_id(username)
+        user_id = self.user_controller.get_user_id(username)
         self.con.execute("DELETE FROM books_users WHERE book_id = ? AND user_id = ?", [book_id, user_id])
         print(f"Book {book_name} removed from user {user_id} successfully")
         
@@ -58,12 +60,17 @@ class BookController:
 
     @handle_database_errors
     def add_book(self, name):
-        book_id = Utils.generate_guid()
+        if self.check_book_exists(name):
+          return
+        book_id = self.helper.generate_guid()
         self.con.execute("INSERT INTO books VALUES (?, ?)", [book_id, name])
-        print(f"Book {name} added successfully")
     
     @handle_database_errors
     def check_book_exists(self, name):
         result = self.con.execute('SELECT * FROM books WHERE name = ?',[name])
         return len(result.fetchdf()) > 0
   
+    @handle_database_errors
+    def get_all_books(self):
+        result = self.con.execute("SELECT * FROM books")
+        return result.fetchdf()

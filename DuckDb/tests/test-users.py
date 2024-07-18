@@ -1,5 +1,5 @@
 import unittest
-from user_controller import UserController
+from controllers.user_controller import UserController
 import duckdb
 
 class TestUserController(unittest.TestCase):
