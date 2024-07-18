@@ -1,4 +1,4 @@
-from datagolf_api import DataGolfAPI
+# from datagolf_api import DataGolfAPI
 from db_manager import DBManager
 from user_controller import UserController
 

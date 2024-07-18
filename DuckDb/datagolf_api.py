@@ -1,5 +1,4 @@
 import requests
-import pandas as pd
 
 class DataGolfAPI:
     def __init__(self, api_key):

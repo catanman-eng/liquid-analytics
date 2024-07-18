@@ -49,7 +49,7 @@ class UserController:
   
   @handle_database_errors
   def update_username(self, old_username, new_username):
-    self.con.execute(f"UPDATE users SET username = '{new_username}' WHERE username = '{old_username}'")
+    self.con.execute("UPDATE users SET username = ? WHERE username = ?", [new_username, old_username])
   
   def logout(self):
     self.con.close()
