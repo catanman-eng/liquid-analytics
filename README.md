@@ -6,9 +6,7 @@ Repo containing work for liquid analytics tech interview
 2. Write basic script that performs a binary search
 3. Create tests that will test said script against edge cases and various inputs
 4. Transfer script to module
-5. Add logging and error handling (bad inputs)
-6. Allow user inputs from console 
-7. Compare search against other search methods and evaluate performance
+5. Compare search against other search methods and evaluate performance
 
 ## DuckDB Gameplan
 1. Learn about DuckDB basics
