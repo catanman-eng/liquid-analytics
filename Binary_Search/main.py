@@ -1,5 +1,5 @@
-import Binary_Search.search_helpers as search_helpers
-from Binary_Search.input_handler import get_user_input
+import search_helpers as search_helpers
+from input_handler import get_user_input
 from rich.console import Console
 from rich.table import Table
 
