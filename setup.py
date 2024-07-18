@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     test_suite="tests",
     install_requires=[
-        # Add your dependencies here
+        "duckdb == 1.0.0"
     ],
     entry_points={
         "console_scripts": [
