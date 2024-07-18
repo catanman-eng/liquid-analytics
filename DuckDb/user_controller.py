@@ -21,6 +21,6 @@ class UserController:
   def remove_user(self, username):
     self.con.execute(f"DELETE FROM users WHERE username = '{username}'")
   
-  def get_users(self):
+  def get_all_users(self):
     result = self.con.execute("SELECT * FROM users")
     return result.fetchdf()
