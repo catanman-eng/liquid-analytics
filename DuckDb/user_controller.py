@@ -24,3 +24,10 @@ class UserController:
   def get_all_users(self):
     result = self.con.execute("SELECT * FROM users")
     return result.fetchdf()
+  
+  def update_username(self, old_username, new_username):
+    self.con.execute(f"UPDATE users SET username = '{new_username}' WHERE username = '{old_username}'")
+  
+  def logout(self):
+    self.con.close()
+    print("Logged out successfully")

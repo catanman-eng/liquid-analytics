@@ -8,10 +8,11 @@ class DBManager:
 
     def connect(self):
         self.con = duckdb.connect(database=self.db_file)
+        return self.con
 
     def create_table(self,table_name, api_response):
         df = pd.DataFrame(api_response.json())  # noqa: F841
-        self.con.execute(f"CREATE TABLE {table_name} as SELECT * FROM df")
+        self.con.execute(f"CREATE TABLE if not exists {table_name} as SELECT * FROM df")
 
     def query(self, query):
         return self.con.execute(query).fetchdf()
