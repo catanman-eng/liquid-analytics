@@ -74,3 +74,4 @@ class BookController:
     def get_all_books(self):
         result = self.con.execute("SELECT * FROM books")
         return result.fetchdf()
+    

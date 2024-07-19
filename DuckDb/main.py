@@ -2,7 +2,6 @@
 from db_manager import DBManager
 from controllers.user_controller import UserController
 from controllers.book_controller import BookController
-from controllers.helpers import Helper
 
 API_KEY = "97a47cb8af3ce0af6a0e6a2a9e56"
 DB_FILE = "datagolf.db"
@@ -71,10 +70,8 @@ def user_management_menu(user_controller):
 # Function to display the book management menu and handle user input
 def book_management_menu(book_controller):
     print("\nBook Management Menu:")
-    print("1. Add book")
-    print("2. Remove book")
-    print("3. View all books")
-    print("4. Back to Main Menu")
+    print("1. View all books")
+    print("2. Back to Main Menu")
 
     while True:
         choice = input("Enter your choice: ")

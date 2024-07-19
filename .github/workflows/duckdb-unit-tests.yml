@@ -31,4 +31,5 @@ jobs:
       run: |
         cd DuckDb
         python -m unittest tests.test-users -v
+        python -m unittest tests.test-books -v
   
