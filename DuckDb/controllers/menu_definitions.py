@@ -27,8 +27,23 @@ def get_book_menu(book_controller, username):
     book_menu_text = "\nBook Management Menu:"
     book_choices = {
         "1": ("View all books", lambda: print(book_controller.get_all_books())),
-        "2": ("View your books", lambda: print(book_controller.get_user_books(username))),
-        "3": ("Back to Main Menu", lambda: None),
+        "2": (
+            "View your books",
+            lambda: print(book_controller.get_user_books(username)),
+        ),
+        "3": (
+            "Add book to your list",
+            lambda: book_controller.add_book_to_user(
+                input("Enter book name: "), username
+            ),
+        ),
+        "4": (
+            "Remove book from your list",
+            lambda: book_controller.remove_book_from_user(
+                input("Enter book name: "), username
+            ),
+        ),
+        "5": ("Back to Main Menu", lambda: None),
     }
     return MenuController(
         book_menu_text, book_choices, exit_choice=max(book_choices.keys(), key=int)
