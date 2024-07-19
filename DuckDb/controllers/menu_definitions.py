@@ -17,21 +17,27 @@ def get_user_menu(user_controller):
         "3": ("View all users", lambda: print(user_controller.get_all_users())),
         "4": ("Back to Main Menu", lambda: None),
     }
-    return MenuController(user_menu_text, user_choices, exit_choice="4")
+
+    return MenuController(
+        user_menu_text, user_choices, exit_choice=max(user_choices.keys(), key=int)
+    )
 
 
-def get_book_menu(book_controller):
+def get_book_menu(book_controller, username):
     book_menu_text = "\nBook Management Menu:"
     book_choices = {
         "1": ("View all books", lambda: print(book_controller.get_all_books())),
-        "2": ("Back to Main Menu", lambda: None),
+        "2": ("View your books", lambda: print(book_controller.get_user_books(username))),
+        "3": ("Back to Main Menu", lambda: None),
     }
-    return MenuController(book_menu_text, book_choices, exit_choice="2")
+    return MenuController(
+        book_menu_text, book_choices, exit_choice=max(book_choices.keys(), key=int)
+    )
 
 
-def get_main_menu(user_controller, book_controller):
+def get_main_menu(user_controller, book_controller, username):
     user_menu = get_user_menu(user_controller)
-    book_menu = get_book_menu(book_controller)
+    book_menu = get_book_menu(book_controller, username)
 
     main_menu_text = "\nMain Menu:"
     main_choices = {
