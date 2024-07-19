@@ -40,6 +40,9 @@ def main():
                 print(f"Welcome, {username}! Your account has been created.")
                 break
 
+        response = api.get_outright_odds("win")
+        api.filter_by_book(username, response)
+
         # Main application loop
         main_menu = get_main_menu(
             user_controller, book_controller, user_config_controller, username

@@ -1,16 +1,14 @@
-UPDATE users
-SET config_id = '9bb58f3e-627b-408f-a11b-0efdbb5abd37'
-WHERE id = 'd0a21dbb-81c1-4002-8c59-c1c0cb3a9b07';
+CREATE TABLE tbl (i INT PRIMARY KEY, j INT UNIQUE, k INT);
 
-INSERT INTO users
-values (
-    'd0a21dbb-81c1-4002-8c59-c1c0cb3a9b07',
-    'evanc',
-    '9bb58f3e-627b-408f-a11b-0efdbb5abd37'
-  ) on conflict do
-update
-set config_id = '9bb58f3e-627b-408f-a11b-0efdbb5abd37'
-where id = 'd0a21dbb-81c1-4002-8c59-c1c0cb3a9b07';
+INSERT INTO tbl VALUES (1, 20, 300);
 
-select *
-from users;
+SELECT * FROM tbl;
+
+INSERT INTO tbl VALUES (1, 40, 700) ON CONFLICT (i) DO UPDATE SET k = 3 * EXCLUDED.k WHERE k > 100;
+
+
+insert into users values ('1', 'test', null);
+
+select * from users;
+
+insert into users values ('1', 'test', null) on conflict (id) do update set config_id = 'test2';
