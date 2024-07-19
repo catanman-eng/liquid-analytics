@@ -16,7 +16,6 @@ def main():
         user_controller = UserController(con)
         book_controller = BookController(con)
         
-        main_menu = get_main_menu(user_controller, book_controller)
 
         # Prompt for sign-in
         while True:
@@ -36,6 +35,7 @@ def main():
                 break
 
         # Main application loop
+        main_menu = get_main_menu(user_controller, book_controller, username)
         while True:
             if not main_menu.display_menu():
                 break

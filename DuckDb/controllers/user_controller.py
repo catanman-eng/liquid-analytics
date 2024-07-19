@@ -50,7 +50,6 @@ class UserController:
     result = self.con.sql("SELECT * FROM users")
     return result
   
-  
   @handle_database_errors
   def update_username(self, old_username, new_username):
     self.con.execute("UPDATE users SET username = ? WHERE username = ?", [new_username, old_username])
