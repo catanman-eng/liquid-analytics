@@ -47,8 +47,8 @@ class UserController:
 
   @handle_database_errors
   def get_all_users(self):
-    result = self.con.execute("SELECT * FROM users")
-    return result.fetchdf()
+    result = self.con.sql("SELECT * FROM users")
+    return result
   
   @handle_database_errors
   def update_username(self, old_username, new_username):

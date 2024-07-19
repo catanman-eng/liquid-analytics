@@ -72,6 +72,6 @@ class BookController:
   
     @handle_database_errors
     def get_all_books(self):
-        result = self.con.execute("SELECT * FROM books")
-        return result.fetchdf()
+        return self.con.sql("SELECT * FROM books")
+
     
