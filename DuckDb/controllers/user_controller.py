@@ -29,7 +29,12 @@ class UserController:
     @handle_database_errors
     def create_users_table(self):
         self.con.execute(
-            "CREATE TABLE IF NOT EXISTS users (id VARCHAR PRIMARY KEY, username VARCHAR, config_id VARCHAR)"
+            """CREATE TABLE IF NOT EXISTS users (
+            id VARCHAR PRIMARY KEY, 
+            username VARCHAR, 
+            config_id VARCHAR
+            )
+            """  
         )
 
     @handle_database_errors
@@ -72,6 +77,16 @@ class UserController:
             "UPDATE users SET username = ? WHERE username = ?",
             [new_username, old_username],
         )
+
+    @handle_database_errors
+    def get_user(self, id) -> Optional[User]:
+        result = self.con.execute("SELECT * FROM users WHERE id = ?", [id])
+        record = result.fetchone()
+        if record:
+            user = User(id=record[0], username=record[1], config_id=record[2])
+            return user
+        else:
+            return None
 
     def logout(self):
         self.con.close()

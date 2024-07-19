@@ -2,11 +2,13 @@
 from db_manager import DBManager
 from controllers.user_controller import UserController
 from controllers.book_controller import BookController
+from controllers.user_config_controller import UserConfigController
 from controllers.menu_definitions import get_main_menu
 from datagolf_api import DataGolfAPI
 
 API_KEY = "97a47cb8af3ce0af6a0e6a2a9e56"
 DB_FILE = "datagolf.db"
+
 
 def main():
     # Create a DuckDB connection
@@ -15,11 +17,11 @@ def main():
     try:
         # Instantiate API
         api = DataGolfAPI(API_KEY, con, db)
-        
+
         # Instantiate controllers
+        user_config_controller = UserConfigController(con)
         user_controller = UserController(con)
         book_controller = BookController(con)
-        
 
         # Prompt for sign-in
         while True:
@@ -39,7 +41,9 @@ def main():
                 break
 
         # Main application loop
-        main_menu = get_main_menu(user_controller, book_controller, username)
+        main_menu = get_main_menu(
+            user_controller, book_controller, user_config_controller, username
+        )
         while True:
             if not main_menu.display_menu():
                 break

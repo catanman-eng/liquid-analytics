@@ -2,10 +2,11 @@ from typing import Callable
 from controllers.helpers import Helper
 from controllers.user_controller import UserController
 from pydantic import BaseModel
+import uuid
 
 
 class UserConfig(BaseModel):
-    user_id: str
+    user_id: uuid.UUID
     kelly_multiplyer: float
     bankroll: int
 
@@ -32,10 +33,9 @@ class UserConfigController:
     def create_user_config_table(self):
         self.con.execute("""
               CREATE TABLE IF NOT EXISTS user_config(
-                user_id VARCHAR PRIMARY KEY,
+                id VARCHAR PRIMARY KEY,
                 kelly_multiplyer DOUBLE,
                 bankroll INTEGER
-                FOREIGN KEY (user_id) REFERENCES users(id)
               )
           """)
 
@@ -54,30 +54,43 @@ class UserConfigController:
     @handle_database_errors
     def get_user_config(self, username):
         user_id = self.user_controller.get_user_id(username)
+        user = self.user_controller.get_user(user_id)
+
         result = self.con.execute(
-            "SELECT * FROM user_config WHERE user_id = ?", [user_id]
+            "SELECT * FROM user_config WHERE id = ?", [user.config_id]
         )
         return result.fetchdf()
 
     @handle_database_errors
-    def add_user_config(self, username, kelly_multiplyer, bankroll):
+    def update_user_config(self, username, kelly_multiplyer, bankroll):
         user_id = self.user_controller.get_user_id(username)
+        user = self.user_controller.get_user(user_id)
+
+        if not user:
+            print(f"User '{username}' not found.")
+            return
 
         config = UserConfig(
-            user_id=user_id, kelly_multiplyer=kelly_multiplyer, bankroll=bankroll
+            user_id=user.id, kelly_multiplyer=kelly_multiplyer, bankroll=bankroll
         )
 
-        result = self.con.execute(
-            "SELECT * FROM user_config WHERE user_id = ?", [config.user_id]
-        )
-        if len(result.fetchdf()) > 0:
+        if user.config_id is not None:
+            print(f"Updating config for user {username}")
             self.con.execute(
-          "UPDATE user_config SET kelly_multiplyer = ?, bankroll = ? WHERE user_id = ?",
-          [config.kelly_multiplyer, config.bankroll, config.user_id],
+                "UPDATE user_config SET kelly_multiplyer = ?, bankroll = ? WHERE id = ?",
+                [config.kelly_multiplyer, config.bankroll, user.config_id],
             )
         else:
+            print(f"Creating new config for user {username}")
+            new_id = self.utils.generate_guid()
+
             self.con.execute(
-          "INSERT INTO user_config VALUES (?, ?, ?)",
-          [config.user_id, config.kelly_multiplyer, config.bankroll],
+                "INSERT INTO user_config VALUES (?, ?, ?)",
+                [new_id, config.kelly_multiplyer, config.bankroll],
             )
+
+            self.con.execute(
+                "UPDATE users SET config_id = ? WHERE id = ?", [new_id, user.id]
+            )
+
         print(f"Config updated for user {username} successfully")
