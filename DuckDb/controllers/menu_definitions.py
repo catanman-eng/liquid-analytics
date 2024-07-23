@@ -1,4 +1,5 @@
 from controllers.menu_controller import MenuController
+OUTRIGHT_BET_TYPES = ["win", "top_5", "top_10", "top_20", "mc", "make_cut", "frl"]
 
 def get_user_menu(user_controller):
     user_menu_text = "\nUser Management Menu:"
@@ -93,7 +94,7 @@ def get_bet_menu(bet_controller, username):
             "Get Outright Plays",
             lambda: bet_controller.get_outright_plays(
                 username,
-                input("Enter Market: "),
+                input(f"Enter Market ({OUTRIGHT_BET_TYPES}): "),
                 float(input("Enter EV Threshold (0 to 1): ")),
             ),
         ),
