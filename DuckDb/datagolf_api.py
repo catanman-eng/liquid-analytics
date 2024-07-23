@@ -2,6 +2,19 @@ import requests
 from db_manager import DBManager
 from controllers.user_controller import UserController
 from controllers.book_controller import BookController
+from controllers.helpers import Helper
+from typing import List
+from pydantic import BaseModel
+
+
+class OutrightPlay(BaseModel):
+    book: str
+    player_name: str
+    ev: float
+    odds: str
+    market: str
+    sub_market: str
+    event_name: str
 
 
 class DataGolfAPI:
@@ -12,6 +25,7 @@ class DataGolfAPI:
         self.db_manager = db_manager
         self.user_controller = UserController(con)
         self.book_controller = BookController(con)
+        self.helper = Helper()
 
         self.create_players_table()
 
@@ -27,12 +41,12 @@ class DataGolfAPI:
         self.db_manager.create_table("players", data)
 
     def get_outright_odds(self, market):
-        url = f"{self.base_url}/betting-tools/outrights?&market={market}&key={self.api_key}"
+        url = f"{self.base_url}/betting-tools/outrights?&market={market}&odds_format=american&key={self.api_key}"
         response = requests.get(url)
         response.raise_for_status()
         return response
 
-    def filter_by_book(self, username, outright_response):
+    def filter_by_book(self, username, outright_response, market=None):
         odds_data = outright_response.json()
 
         odds_list = odds_data.get("odds", [])
@@ -61,9 +75,56 @@ class DataGolfAPI:
             "books_offering": books_list,
             "event_name": odds_data.get("event_name"),
             "last_updated": odds_data.get("last_updated"),
-            "market": odds_data.get("market"),
+            "bet_type": market,
+            "sub_bet_type": odds_data.get("market"),
             "notes": odds_data.get("notes"),
             "odds": filtered_odds_list,
         }
 
-        print(result)
+        return result
+
+    def filter_by_ev(self, odds_list, ev_threshold) -> List[OutrightPlay]:
+        odds = odds_list["odds"]
+
+        if not odds:
+            print("No odds found.")
+            return []
+
+        filtered_plays = []
+        always_keep_keys = ["datagolf", "player_name"]
+
+        for odd in odds:
+            filtered_odd = {
+                key: value for key, value in odd.items() if key in always_keep_keys
+            }
+
+            for key, value in odd.items():
+                if key not in always_keep_keys:
+                    try:
+                        ev = self.helper.ev(
+                            float(value.replace("+", "")),
+                            float(
+                                odd["datagolf"]["baseline_history_fit"].replace("+", "")
+                            ),
+                        )
+                    except AttributeError:
+                        print(f"Error calculating EV for {odd['player_name']}")
+                        ev = 0
+
+                    if ev > ev_threshold:
+                        filtered_odd[key] = value
+
+                        bet = OutrightPlay(
+                            event_name=odds_list["event_name"],
+                            player_name=filtered_odd["player_name"],
+                            market=odds_list["bet_type"],
+                            sub_market=odds_list["sub_bet_type"],
+                            book=key,
+                            odds=value,
+                            ev=ev * 100,
+                        )
+                        filtered_plays.append(bet)
+        
+        filtered_plays.sort(key=lambda x: x.ev, reverse=True)
+
+        return filtered_plays
