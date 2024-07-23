@@ -10,6 +10,7 @@ setup(
         "pandas == 2.2.2",
         "requests == 2.32.3",
         "pydantic == 2.8.2",
+        "rich == 13.7.1",
     ],
     entry_points={
         "console_scripts": [

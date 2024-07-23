@@ -3,6 +3,8 @@ from controllers.helpers import Helper
 from controllers.user_controller import UserController
 from controllers.user_config_controller import UserConfigController
 from datagolf_api import DataGolfAPI
+from rich.console import Console
+from rich.text import Text
 
 
 def handle_database_errors(func: Callable[..., any]) -> Callable[..., any]:
@@ -16,6 +18,9 @@ def handle_database_errors(func: Callable[..., any]) -> Callable[..., any]:
 
 
 OUTRIGHT_BET_TYPES = ["win", "top_5", "top_10", "top_20", "mc", "make_cut", "frl"]
+
+# Define color mapping for books
+BOOK_COLORS = {"fanduel": "blue"}
 
 
 class BetController:
@@ -72,13 +77,32 @@ class BetController:
 
         if not isinstance(ev_threshold, float):
             raise ValueError("EV threshold must be a float")
-        
-        user_config = self.user_config_controller.get_user_config(username)
 
+        user_config = self.user_config_controller.get_user_config(username)
 
         outright_response = self.api.get_outright_odds(bet_type)
         ev_filtered_response = self.api.filter_by_ev(
             self.api.filter_by_book(username, outright_response, "outright"),
-            ev_threshold, user_config
+            ev_threshold,
+            user_config,
         )
-        print(ev_filtered_response)
+
+        console = Console()
+        formatted_output = ""
+
+        for play in ev_filtered_response:
+            book_color = BOOK_COLORS.get(
+                play.book, "white"
+            )  # Default to white if book not found
+            formatted_output += f"{'-'*40}\n"  # Separator line for readability
+
+            for key, value in play.model_dump().items():
+                if key == "book":
+                    formatted_value = Text(str(value), style=f"bold {book_color}")
+                else:
+                    formatted_value = Text(str(value))
+                formatted_output += (
+                    f"{key.replace('_', ' ').title()}: {formatted_value}\n"
+                )
+            formatted_output += f"{'-'*40}\n"  # Separator line for readability
+        console.print(formatted_output)
