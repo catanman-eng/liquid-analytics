@@ -93,7 +93,8 @@ def get_bet_menu(bet_controller, username):
             "Get Outright Plays",
             lambda: bet_controller.get_outright_plays(
                 username,
-                input("Enter Market: ")
+                input("Enter Market: "),
+                float(input("Enter EV Threshold (0 to 1): ")),
             ),
         ),
         "2": ("Back to Main Menu", lambda: None),

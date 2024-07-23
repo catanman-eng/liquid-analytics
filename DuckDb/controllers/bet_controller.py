@@ -1,6 +1,7 @@
 from typing import Callable
 from controllers.helpers import Helper
-from controllers.user_controller import UserController, User
+from controllers.user_controller import UserController
+from controllers.user_config_controller import UserConfigController
 from datagolf_api import DataGolfAPI
 
 
@@ -21,6 +22,7 @@ class BetController:
     def __init__(self, con, api: DataGolfAPI):
         self.con = con
         self.user_controller = UserController(con)
+        self.user_config_controller = UserConfigController(con)
         self.helper = Helper()
         self.api = api
 
@@ -60,14 +62,23 @@ class BetController:
           """)
 
     # api actions
-    def get_outright_plays(self, username, bet_type):
+    def get_outright_plays(self, username, bet_type, ev_threshold: float):
         if bet_type not in OUTRIGHT_BET_TYPES:
             raise ValueError(
                 f"Bet type {bet_type} not supported.\nSupported types: {OUTRIGHT_BET_TYPES}"
             )
+        if ev_threshold < 0 or ev_threshold > 1:
+            raise ValueError("EV threshold must be between 0 and 1")
+
+        if not isinstance(ev_threshold, float):
+            raise ValueError("EV threshold must be a float")
+        
+        user_config = self.user_config_controller.get_user_config(username)
+
 
         outright_response = self.api.get_outright_odds(bet_type)
-        filtered_response = self.api.filter_by_ev(
-            self.api.filter_by_book(username, outright_response, "outright"), 0.2
+        ev_filtered_response = self.api.filter_by_ev(
+            self.api.filter_by_book(username, outright_response, "outright"),
+            ev_threshold, user_config
         )
-        print(filtered_response)
+        print(ev_filtered_response)

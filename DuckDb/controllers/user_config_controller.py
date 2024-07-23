@@ -59,7 +59,17 @@ class UserConfigController:
         result = self.con.execute(
             "SELECT * FROM user_config WHERE id = ?", [user.config_id]
         )
-        return result.fetchdf()
+
+        record = result.fetchone()
+        if record:
+            config = UserConfig(
+                user_id=user_id, kelly_multiplyer=record[1], bankroll=record[2]
+            )
+        else:
+            print(f"User {username} has no config")
+            return None
+        
+        return config
 
     @handle_database_errors
     def update_user_config(self, username, kelly_multiplyer, bankroll):
