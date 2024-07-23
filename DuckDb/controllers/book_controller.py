@@ -85,7 +85,6 @@ class BookController:
     @handle_database_errors
     def get_user_books(self, username):
         user_id = self.user_controller.get_user_id(username)
-        self.con.sql("SELECT * from books_users")
         result = self.con.execute(
             """
                     SELECT b.name as "Book", u.username as "User" 
