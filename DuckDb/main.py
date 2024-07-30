@@ -4,6 +4,7 @@ from controllers.user_controller import UserController
 from controllers.book_controller import BookController
 from controllers.user_config_controller import UserConfigController
 from controllers.menu_definitions import get_main_menu
+from controllers.bet_controller import BetController
 from datagolf_api import DataGolfAPI
 
 API_KEY = "97a47cb8af3ce0af6a0e6a2a9e56"
@@ -22,6 +23,7 @@ def main():
         user_config_controller = UserConfigController(con)
         user_controller = UserController(con)
         book_controller = BookController(con)
+        bet_controller = BetController(con, api)
 
         # Prompt for sign-in
         while True:
@@ -42,7 +44,11 @@ def main():
 
         # Main application loop
         main_menu = get_main_menu(
-            user_controller, book_controller, user_config_controller, username
+            user_controller,
+            book_controller,
+            user_config_controller,
+            bet_controller,
+            username,
         )
         while True:
             if not main_menu.display_menu():

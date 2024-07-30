@@ -1,4 +1,5 @@
 from controllers.menu_controller import MenuController
+OUTRIGHT_BET_TYPES = ["win", "top_5", "top_10", "top_20", "mc", "make_cut", "frl"]
 
 def get_user_menu(user_controller):
     user_menu_text = "\nUser Management Menu:"
@@ -70,16 +71,35 @@ def get_config_menu(config_controller, username):
     )
 
 
-def get_main_menu(user_controller, book_controller, user_config_controller, username):
+def get_main_menu(user_controller, book_controller, user_config_controller, bet_controller, username):
     user_menu = get_user_menu(user_controller)
     book_menu = get_book_menu(book_controller, username)
     config_menu = get_config_menu(user_config_controller, username)
+    bet_menu = get_bet_menu(bet_controller, username)
 
     main_menu_text = "\nMain Menu:"
     main_choices = {
         "1": ("User Management", user_menu.display_menu),
         "2": ("Book Management", book_menu.display_menu),
         "3": ("User Configuration", config_menu.display_menu),
-        "4": ("Exit", lambda: exit()),
+        "4": ("Bet Menu", bet_menu.display_menu),
+        "5": ("Exit", lambda: exit())
     }
     return MenuController(main_menu_text, main_choices)
+
+def get_bet_menu(bet_controller, username):
+    config_menu_text = "\nUser Configuration Menu:"
+    config_choices = {
+        "1": (
+            "Get Outright Plays",
+            lambda: bet_controller.get_outright_plays(
+                username,
+                input(f"Enter Market ({OUTRIGHT_BET_TYPES}): "),
+                float(input("Enter EV Threshold (0 to 1): ")),
+            ),
+        ),
+        "2": ("Back to Main Menu", lambda: None),
+    }
+    return MenuController(
+        config_menu_text, config_choices, exit_choice=max(config_choices.keys(), key=int)
+    )
