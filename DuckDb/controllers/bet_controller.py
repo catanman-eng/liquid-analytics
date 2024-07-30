@@ -18,9 +18,15 @@ def handle_database_errors(func: Callable[..., any]) -> Callable[..., any]:
 
 
 OUTRIGHT_BET_TYPES = ["win", "top_5", "top_10", "top_20", "mc", "make_cut", "frl"]
+MATCHUP_BET_TYPES = ["tournament_matchups", "round_matchups", "3_balls"]
 
 # Define color mapping for books
-BOOK_COLORS = {"fanduel": "blue"}
+BOOK_COLORS = {
+    "fanduel": "blue",
+    "draftkings": "bright green",
+    "caesars": "gold1",
+    "bet365": "green",
+}
 
 
 class BetController:
@@ -111,3 +117,16 @@ class BetController:
                 console.print(key_text, formatted_value)
 
             console.print(separator)
+
+    def get_matchup_plays(self, username, bet_type):
+        if bet_type not in MATCHUP_BET_TYPES:
+            raise ValueError(
+                f"Bet type {bet_type} not supported.\nSupported types: {MATCHUP_BET_TYPES}"
+            )
+        user_config = self.user_config_controller.get_user_config(username)
+        matchup_response = self.api.get_matchup_odds(bet_type)
+        ev_filtered_response = (
+            self.api.filter_by_book_matchup(username, matchup_response, "outright"),
+        )
+
+        print(ev_filtered_response)

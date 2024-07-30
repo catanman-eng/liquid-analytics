@@ -49,6 +49,12 @@ class DataGolfAPI:
         response.raise_for_status()
         return response.json()
 
+    def get_matchup_odds(self, market):
+        url = f"{self.base_url}/betting-tools/matchups?&market={market}&odds_format=american&key={self.api_key}"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+
     def filter_by_book(self, username, outright_response, market=None):
         odds_list = outright_response["odds"]
         user_books = self.book_controller.get_user_books(username)
@@ -71,7 +77,6 @@ class DataGolfAPI:
                 )
             )
         ]
-
         result = {
             "books_offering": books_list,
             "event_name": outright_response["event_name"],
@@ -82,6 +87,44 @@ class DataGolfAPI:
         }
 
         return result
+
+    def filter_by_book_matchup(
+        self,
+        username,
+        matchup_response,
+        market=None,
+    ):
+        matchup_list = matchup_response["match_list"]
+        user_books = self.book_controller.get_user_books(username)
+        books_list = user_books["Book"].tolist()
+
+        if "matchup" in matchup_response["market"]:
+            always_keep_keys = ["datagolf", "ties", "p1_player_name", "p2_player_name"]
+        else:
+            always_keep_keys = [
+                "datagolf",
+                "player_name",
+                "p1_player_name",
+                "p2_player_name",
+                "p3_player_name",
+            ]
+
+        filtered_matchup_list = []
+        for matchup_dict in matchup_list:
+            odds_dict = matchup_dict["odds"]
+            if any(book in odds_dict for book in books_list):
+                filtered_odds = odds_dict
+
+                always_keep_data = {
+                    key: matchup_dict[key]
+                    for key in always_keep_keys
+                    if key in matchup_dict
+                }
+
+                filtered_matchup = {**always_keep_data, "odds": filtered_odds}
+                filtered_matchup_list.append(filtered_matchup)
+
+        return filtered_matchup_list
 
     def filter_by_ev(
         self, odds_list, ev_threshold, config: UserConfig
