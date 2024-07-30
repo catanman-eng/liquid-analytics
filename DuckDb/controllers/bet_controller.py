@@ -110,7 +110,7 @@ class BetController:
                     )  # Default to white if book not found
                     formatted_value = Text(str(value).title(), style=f"{book_color}")
                 elif key == "ev":
-                    formatted_value = Text(f"{value:.2f}", style="green")
+                    formatted_value = Text(f"{value:.2f}%", style="green")
                 else:
                     formatted_value = Text(str(value).title(), style="white")
 
@@ -118,15 +118,48 @@ class BetController:
 
             console.print(separator)
 
-    def get_matchup_plays(self, username, bet_type):
+    def get_matchup_plays(self, username, bet_type, ev_threshold: float):
         if bet_type not in MATCHUP_BET_TYPES:
             raise ValueError(
                 f"Bet type {bet_type} not supported.\nSupported types: {MATCHUP_BET_TYPES}"
             )
+
+        if ev_threshold < 0 or ev_threshold > 1:
+            raise ValueError("EV threshold must be between 0 and 1")
+
+        if not isinstance(ev_threshold, float):
+            raise ValueError("EV threshold must be a float")
+
         user_config = self.user_config_controller.get_user_config(username)
         matchup_response = self.api.get_matchup_odds(bet_type)
-        ev_filtered_response = (
-            self.api.filter_by_book_matchup(username, matchup_response, "outright"),
+        
+        if "offered" in matchup_response["match_list"]:
+            print(matchup_response["match_list"])
+            return
+        
+        ev_filtered_response = self.api.filter_by_ev_matchup(
+            self.api.filter_by_book_matchup(username, matchup_response, "matchup"),
+            ev_threshold,
+            user_config,
         )
 
-        print(ev_filtered_response)
+        console = Console()
+        for play in ev_filtered_response:
+            separator = Text("-" * 40, style="bold yellow")
+            console.print(separator)
+
+            for key, value in play.model_dump().items():
+                key_text = Text(
+                    f"{key.replace('_', ' ').title()}: ", style="bold white"
+                )
+                if key == "book":
+                    book_color = BOOK_COLORS.get(value, "white")
+                    formatted_value = Text(str(value).title(), style=f"{book_color}")
+                elif key == "ev":
+                    formatted_value = Text(f"{value:.2f}%", style="green")
+                else:
+                    formatted_value = Text(str(value).title(), style="white")
+
+                console.print(key_text, formatted_value)
+
+            console.print(separator)

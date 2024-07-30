@@ -110,7 +110,9 @@ def get_bet_menu(bet_controller, username):
         "2": (
             "Get Matchup Plays",
             lambda: bet_controller.get_matchup_plays(
-                username, input(f"Enter Market {MATCHUP_BET_TYPES}: ")
+                username,
+                input(f"Enter Market {MATCHUP_BET_TYPES}: "),
+                float(input("Enter EV Threshold (0 to 1): ")),
             ),
         ),
         "3": ("Back to Main Menu", lambda: None),

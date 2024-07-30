@@ -8,16 +8,16 @@ from typing import List
 from pydantic import BaseModel
 
 
-class OutrightPlay(BaseModel):
+class Play(BaseModel):
     book: str
-    player_name: str
-    ev: float
-    odds: str
+    bet_desc: str
     market: str
     sub_market: str
-    event_name: str
+    ev: float
+    odds: str
     kelly: str = "0u"
     bet_size: str = "$0"
+    event_name: str
 
 
 class DataGolfAPI:
@@ -95,6 +95,7 @@ class DataGolfAPI:
         market=None,
     ):
         matchup_list = matchup_response["match_list"]
+
         user_books = self.book_controller.get_user_books(username)
         books_list = user_books["Book"].tolist()
 
@@ -112,23 +113,35 @@ class DataGolfAPI:
         filtered_matchup_list = []
         for matchup_dict in matchup_list:
             odds_dict = matchup_dict["odds"]
-            if any(book in odds_dict for book in books_list):
-                filtered_odds = odds_dict
+            filtered_odds = {
+                book: odds_dict[book] for book in books_list if book in odds_dict
+            }
 
+            if filtered_odds:
                 always_keep_data = {
                     key: matchup_dict[key]
                     for key in always_keep_keys
                     if key in matchup_dict
                 }
+                datagolf_odds = odds_dict.get("datagolf", {})
 
-                filtered_matchup = {**always_keep_data, "odds": filtered_odds}
+                updated_filtered_odds = {**filtered_odds, "datagolf": datagolf_odds}
+
+                filtered_matchup = {**always_keep_data, "odds": updated_filtered_odds}
                 filtered_matchup_list.append(filtered_matchup)
 
-        return filtered_matchup_list
+        result = {
+            "books_offering": books_list,
+            "event_name": matchup_response["event_name"],
+            "last_updated": matchup_response["last_updated"],
+            "bet_type": market,
+            "sub_bet_type": matchup_response["market"],
+            "odds": filtered_matchup_list,
+        }
 
-    def filter_by_ev(
-        self, odds_list, ev_threshold, config: UserConfig
-    ) -> List[OutrightPlay]:
+        return result
+
+    def filter_by_ev(self, odds_list, ev_threshold, config: UserConfig) -> List[Play]:
         odds = odds_list["odds"]
 
         if not odds:
@@ -165,18 +178,121 @@ class DataGolfAPI:
                             ),
                             2,
                         )
-                        bet = OutrightPlay(
+                        bet = Play(
                             event_name=odds_list["event_name"],
-                            player_name=filtered_odd["player_name"],
+                            bet_desc=f"{filtered_odd['player_name']}: {odds_list['sub_bet_type'].title()}",
                             market=odds_list["bet_type"],
                             sub_market=odds_list["sub_bet_type"],
                             book=key,
                             odds=value,
                             ev=round(ev * 100, 0),
                             kelly=f"{kelly}u",
-                            bet_size=f"${kelly*config.bankroll}",
+                            bet_size=f"${kelly*(config.bankroll/100)}",
                         )
                         filtered_plays.append(bet)
+
+        filtered_plays.sort(key=lambda x: x.ev, reverse=True)
+
+        return filtered_plays
+
+    def filter_by_ev_matchup(
+        self, matchups, ev_threshold, config: UserConfig
+    ) -> List[Play]:
+
+        odds_list = matchups["odds"]
+        filtered_plays = []
+        print(odds_list)
+
+        for odds in odds_list:
+            if not odds:
+                print("No odds found.")
+                return []
+
+            always_keep_keys = [
+                "datagolf",
+                "p1_player_name",
+                "p2_player_name",
+                "p3_player_name",
+                "ties",
+            ]
+
+            filtered_odd = {
+                key: value for key, value in odds.items() if key in always_keep_keys
+            }
+
+            if "p3" in odds.keys():
+                pass
+            else:
+                try:
+                    datagolf_odds = odds["odds"].get("datagolf", {})
+                    p1_fair_odds = float(
+                        datagolf_odds.get("p1", "0").replace("+", "")
+                    )
+                    p2_fair_odds = float(
+                        datagolf_odds.get("p2", "0").replace("+", "")
+                    )
+                except ValueError as e:
+                    print(f"Error extracting fair odds for {odds}: {e}")
+                    continue
+
+                book_odds = {
+                    book: {
+                        "p1": float(value["p1"].replace("+", "")),
+                        "p2": float(value["p2"].replace("+", "")),
+                    }
+                    for book, value in odds["odds"].items()
+                    if book != "datagolf"
+                }
+                book_name = next(iter(book_odds))
+                book_name_odds = book_odds[book_name]
+                p1_book_odds = book_name_odds["p1"]
+                p2_book_odds = book_name_odds["p2"]
+
+                p1_ev = self.helper.ev(p1_book_odds, p1_fair_odds)
+                p2_ev = self.helper.ev(p2_book_odds, p2_fair_odds)
+
+                if p1_ev > ev_threshold:
+                    kelly = round(
+                        self.helper.kelly_stake(
+                            p1_book_odds,
+                            p1_fair_odds,
+                            config.kelly_multiplyer,
+                        ),
+                        2,
+                    )
+                    bet = Play(
+                        event_name=matchups["event_name"],
+                        bet_desc=f'{filtered_odd["p1_player_name"]} > {filtered_odd["p2_player_name"]}',
+                        market=matchups["bet_type"],
+                        sub_market=matchups["sub_bet_type"],
+                        book=next(iter(book_odds)),
+                        odds=self.helper.american_float_to_string(p1_book_odds),
+                        ev=round(p1_ev * 100, 0),
+                        kelly=f"{kelly}u",
+                        bet_size=f"${kelly*(config.bankroll/100)}",
+                    )
+                    filtered_plays.append(bet)
+                elif p2_ev > ev_threshold:
+                    kelly = round(
+                        self.helper.kelly_stake(
+                            p2_book_odds,
+                            p2_fair_odds,
+                            config.kelly_multiplyer,
+                        ),
+                        2,
+                    )
+                    bet = Play(
+                        event_name=matchups["event_name"],
+                        bet_desc=f'{filtered_odd["p2_player_name"]} > {filtered_odd["p1_player_name"]}',
+                        market=matchups["bet_type"],
+                        sub_market=matchups["sub_bet_type"],
+                        book=next(iter(book_odds)),
+                        odds=self.helper.american_float_to_string(p2_book_odds),
+                        ev=round(p2_ev * 100, 0),
+                        kelly=f"{kelly}u",
+                        bet_size=f"${kelly*(config.bankroll/100)}",
+                    )
+                    filtered_plays.append(bet)
 
         filtered_plays.sort(key=lambda x: x.ev, reverse=True)
 
