@@ -131,16 +131,19 @@ class BetController:
             raise ValueError("EV threshold must be a float")
 
         user_config = self.user_config_controller.get_user_config(username)
-        matchup_response = self.api.get_matchup_odds(bet_type)
-        
+        matchup_response= self.api.get_matchup_odds(bet_type)
+
         if "offered" in matchup_response["match_list"]:
             print(matchup_response["match_list"])
             return
-        
+
         ev_filtered_response = self.api.filter_by_ev_matchup(
-            self.api.filter_by_book_matchup(username, matchup_response, "matchup"),
+            self.api.filter_by_book_matchup(
+                username, matchup_response, "matchup", bet_type
+            ),
             ev_threshold,
             user_config,
+            bet_type,
         )
 
         console = Console()

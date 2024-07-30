@@ -92,22 +92,32 @@ class DataGolfAPI:
         self,
         username,
         matchup_response,
-        market=None,
+        market,
+        sub_market,
     ):
         matchup_list = matchup_response["match_list"]
 
         user_books = self.book_controller.get_user_books(username)
         books_list = user_books["Book"].tolist()
-
-        if "matchup" in matchup_response["market"]:
+        print(sub_market)
+        if sub_market == "tournament_matchups":
             always_keep_keys = ["datagolf", "ties", "p1_player_name", "p2_player_name"]
-        else:
+        elif sub_market == "3_balls":
             always_keep_keys = [
                 "datagolf",
                 "player_name",
                 "p1_player_name",
                 "p2_player_name",
                 "p3_player_name",
+                "round_num",
+            ]
+        elif sub_market == "round_matchups":
+            always_keep_keys = [
+                "datagolf",
+                "player_name",
+                "p1_player_name",
+                "p2_player_name",
+                "round_num",
             ]
 
         filtered_matchup_list = []
@@ -196,41 +206,52 @@ class DataGolfAPI:
         return filtered_plays
 
     def filter_by_ev_matchup(
-        self, matchups, ev_threshold, config: UserConfig
+        self, matchups, ev_threshold, config: UserConfig, market
     ) -> List[Play]:
-
         odds_list = matchups["odds"]
         filtered_plays = []
-        print(odds_list)
 
         for odds in odds_list:
             if not odds:
                 print("No odds found.")
                 return []
 
-            always_keep_keys = [
-                "datagolf",
-                "p1_player_name",
-                "p2_player_name",
-                "p3_player_name",
-                "ties",
-            ]
+            if market == "tournament_matchups":
+                always_keep_keys = [
+                    "datagolf",
+                    "ties",
+                    "p1_player_name",
+                    "p2_player_name",
+                ]
+            elif market == "3_balls":
+                always_keep_keys = [
+                    "datagolf",
+                    "player_name",
+                    "p1_player_name",
+                    "p2_player_name",
+                    "p3_player_name",
+                    "round_num",
+                ]
+            elif market == "round_matchups":
+                always_keep_keys = [
+                    "datagolf",
+                    "player_name",
+                    "p1_player_name",
+                    "p2_player_name",
+                    "round_num",
+                ]
 
             filtered_odd = {
                 key: value for key, value in odds.items() if key in always_keep_keys
             }
 
-            if "p3" in odds.keys():
+            if market == "3_balls" or market == "round_matchups":
                 pass
-            else:
+            elif market == "tournament_matchups":
                 try:
                     datagolf_odds = odds["odds"].get("datagolf", {})
-                    p1_fair_odds = float(
-                        datagolf_odds.get("p1", "0").replace("+", "")
-                    )
-                    p2_fair_odds = float(
-                        datagolf_odds.get("p2", "0").replace("+", "")
-                    )
+                    p1_fair_odds = float(datagolf_odds.get("p1", "0").replace("+", ""))
+                    p2_fair_odds = float(datagolf_odds.get("p2", "0").replace("+", ""))
                 except ValueError as e:
                     print(f"Error extracting fair odds for {odds}: {e}")
                     continue
