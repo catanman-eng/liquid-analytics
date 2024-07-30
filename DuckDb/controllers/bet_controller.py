@@ -88,15 +88,26 @@ class BetController:
         )
 
         console = Console()
-        formatted_output = ""
-
         for play in ev_filtered_response:
-            formatted_output += f"{'-'*40}\n"  # Separator line for readability
+            # Separator line for readability
+            separator = Text("-" * 40, style="bold yellow")
+            console.print(separator)
 
             for key, value in play.model_dump().items():
-                formatted_value = Text(str(value))
-                formatted_output += (
-                    f"{key.replace('_', ' ').title()}: {formatted_value}\n"
+                key_text = Text(
+                    f"{key.replace('_', ' ').title()}: ", style="bold white"
                 )
-            formatted_output += f"{'-'*40}\n"  # Separator line for readability
-        console.print(formatted_output)
+                if key == "book":
+                    # Determine the color based on the book
+                    book_color = BOOK_COLORS.get(
+                        value, "white"
+                    )  # Default to white if book not found
+                    formatted_value = Text(str(value).title(), style=f"{book_color}")
+                elif key == "ev":
+                    formatted_value = Text(f"{value:.2f}", style="green")
+                else:
+                    formatted_value = Text(str(value).title(), style="white")
+
+                console.print(key_text, formatted_value)
+
+            console.print(separator)
