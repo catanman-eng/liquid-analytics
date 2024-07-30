@@ -47,3 +47,8 @@ class Helper:
         q = 1 - p
         b = self.american_profit(bet_odds, 100.0) / 100.0
         return (p - (q / b)) * multiplier * 100.0
+    
+    def american_float_to_string(self, odds: float) -> str:
+        if odds > 0:
+            return f"+{odds:.0f}"
+        return f"{odds:.0f}"
