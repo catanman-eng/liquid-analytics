@@ -40,6 +40,7 @@ class BookController:
         result = self.con.execute("SELECT id FROM books WHERE name = ?", [book_name])
         return result.fetchdf().iloc[0]["id"]
 
+
     @handle_database_errors
     def add_book_to_user(self, book_name, username):
         # display books available to add

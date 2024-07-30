@@ -115,7 +115,8 @@ def get_bet_menu(bet_controller, username):
                 float(input("Enter EV Threshold (0 to 1): ")),
             ),
         ),
-        "3": ("Back to Main Menu", lambda: None),
+        "3": ("Get User Bets", lambda: print(bet_controller.get_user_bets(username))),
+        "4": ("Back to Main Menu", lambda: None),
     }
     return MenuController(
         config_menu_text,

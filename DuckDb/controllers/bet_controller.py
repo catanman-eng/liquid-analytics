@@ -2,9 +2,11 @@ from typing import Callable
 from controllers.helpers import Helper
 from controllers.user_controller import UserController
 from controllers.user_config_controller import UserConfigController
-from datagolf_api import DataGolfAPI
+from controllers.book_controller import BookController
+from datagolf_api import DataGolfAPI, Play
 from rich.console import Console
 from rich.text import Text
+from typing import List
 
 
 def handle_database_errors(func: Callable[..., any]) -> Callable[..., any]:
@@ -36,6 +38,7 @@ class BetController:
         self.user_config_controller = UserConfigController(con)
         self.helper = Helper()
         self.api = api
+        self.book_controller = BookController(con)
 
         # table setup
         self.create_bets_table()
@@ -56,7 +59,8 @@ class BetController:
                 bet_name VARCHAR,
                 event VARCHAR,
                 kelly decimal,
-                ev_percent decimal                   
+                ev_percent decimal,
+                UNIQUE (bet_name, event, sub_type)                  
               )
           """)
 
@@ -131,7 +135,7 @@ class BetController:
             raise ValueError("EV threshold must be a float")
 
         user_config = self.user_config_controller.get_user_config(username)
-        matchup_response= self.api.get_matchup_odds(bet_type)
+        matchup_response = self.api.get_matchup_odds(bet_type)
 
         if "offered" in matchup_response["match_list"]:
             print(matchup_response["match_list"])
@@ -166,3 +170,86 @@ class BetController:
                 console.print(key_text, formatted_value)
 
             console.print(separator)
+
+        self.add_bet_list(ev_filtered_response, username)
+
+    @handle_database_errors
+    def add_bet_list(self, bet_list: List[Play], username: str):
+        user_id = self.user_controller.get_user_id(username)
+        bet_ids = []
+        for bet in bet_list:
+            book_id = self.book_controller.get_book_id(bet.book)
+            if self.check_bet_exists(bet.bet_desc, bet.event_name, bet.sub_market):
+                continue
+            bet_id = self.helper.generate_guid()
+            bet_ids.append(bet_id)
+            self.con.execute(
+                """
+                INSERT INTO bets (id, book_id, new, type, sub_type, book_odds, datagolf_odds, bet_name, event, kelly, ev_percent)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (bet_name, event, sub_type)
+                DO NOTHING
+                """,
+                [
+                    bet_id,
+                    book_id,
+                    False,
+                    bet.market,
+                    bet.sub_market,
+                    bet.odds,
+                    bet.fair_odds,
+                    bet.bet_desc,
+                    bet.event_name,
+                    float(bet.kelly.replace("u", "")),
+                    bet.ev,
+                ],
+            )
+        self.add_user_bets(user_id, bet_ids)
+
+    @handle_database_errors
+    def get_all_bets(self):
+        return self.con.sql("SELECT * FROM bets")
+
+    @handle_database_errors
+    def add_user_bets(self, user_id, bet_ids):
+        for bet_id in bet_ids:
+            self.con.execute("INSERT INTO user_bets VALUES (?, ?)", [bet_id, user_id])
+
+    @handle_database_errors
+    def get_user_bets(self, username):
+        user_id = self.user_controller.get_user_id(username)
+        result = self.con.execute(
+            """
+            SELECT b.bet_name, b.event, b.type, b.sub_type, b.book_odds, b.datagolf_odds, b.kelly, b.ev_percent
+            FROM user_bets ub
+            JOIN bets b ON ub.bet_id = b.id
+            WHERE ub.user_id = ?
+            """,
+            [user_id],
+        )
+
+        return result.fetchdf()
+
+    @handle_database_errors
+    def get_bet(self, bet_name, event, sub_type):
+        result = self.con.execute(
+            """
+                        SELECT * FROM bets 
+                        WHERE bet_name = ?
+                        and event = ? 
+                        and sub_type = ?""",
+            [bet_name, event, sub_type],
+        )
+        return result.fetchdf()
+
+    @handle_database_errors
+    def check_bet_exists(self, bet_name, event, sub_type):
+        result = self.con.execute(
+            """
+                        SELECT * FROM bets 
+                        WHERE bet_name = ?
+                        and event = ? 
+                        and sub_type = ?""",
+            [bet_name, event, sub_type],
+        )
+        return len(result.fetchdf()) > 0

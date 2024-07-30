@@ -15,6 +15,7 @@ class Play(BaseModel):
     sub_market: str
     ev: float
     odds: str
+    fair_odds: str
     kelly: str = "0u"
     bet_size: str = "$0"
     event_name: str
@@ -194,6 +195,7 @@ class DataGolfAPI:
                             market=odds_list["bet_type"],
                             sub_market=odds_list["sub_bet_type"],
                             book=key,
+                            fair_odds=fair_odds,
                             odds=value,
                             ev=round(ev * 100, 0),
                             kelly=f"{kelly}u",
@@ -291,6 +293,7 @@ class DataGolfAPI:
                         ev=round(p1_ev * 100, 0),
                         kelly=f"{kelly}u",
                         bet_size=f"${kelly*(config.bankroll/100)}",
+                        fair_odds=self.helper.american_float_to_string(p1_fair_odds),
                     )
                     filtered_plays.append(bet)
                 elif p2_ev > ev_threshold:
@@ -312,6 +315,7 @@ class DataGolfAPI:
                         ev=round(p2_ev * 100, 0),
                         kelly=f"{kelly}u",
                         bet_size=f"${kelly*(config.bankroll/100)}",
+                        fair_odds=self.helper.american_float_to_string(p2_fair_odds),
                     )
                     filtered_plays.append(bet)
 
