@@ -100,7 +100,7 @@ class DataGolfAPI:
 
         user_books = self.book_controller.get_user_books(username)
         books_list = user_books["Book"].tolist()
-        print(sub_market)
+
         if sub_market == "tournament_matchups":
             always_keep_keys = ["datagolf", "ties", "p1_player_name", "p2_player_name"]
         elif sub_market == "3_balls":
@@ -195,7 +195,7 @@ class DataGolfAPI:
                             market=odds_list["bet_type"],
                             sub_market=odds_list["sub_bet_type"],
                             book=key,
-                            fair_odds=fair_odds,
+                            fair_odds=self.helper.american_float_to_string(fair_odds),
                             odds=value,
                             ev=round(ev * 100, 0),
                             kelly=f"{kelly}u",

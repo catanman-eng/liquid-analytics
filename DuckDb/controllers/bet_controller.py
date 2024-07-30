@@ -122,7 +122,16 @@ class BetController:
 
             console.print(separator)
 
-    def get_matchup_plays(self, username, bet_type, ev_threshold: float):
+    def get_matchup_plays(
+        self, username, bet_type, ev_threshold: float, new: str = "n"
+    ):
+        if new == "n":
+            new = False
+        elif new == "y":
+            new = True
+        else:
+            raise ValueError("Invalid input for new bets only. Please enter 'y' or 'n'")
+
         if bet_type not in MATCHUP_BET_TYPES:
             raise ValueError(
                 f"Bet type {bet_type} not supported.\nSupported types: {MATCHUP_BET_TYPES}"
@@ -150,6 +159,11 @@ class BetController:
             bet_type,
         )
 
+        if new:
+            ev_filtered_response = self.filter_existing_bets(ev_filtered_response)
+
+        if not ev_filtered_response:
+            print("No new plays found.")
         console = Console()
         for play in ev_filtered_response:
             separator = Text("-" * 40, style="bold yellow")
@@ -253,3 +267,40 @@ class BetController:
             [bet_name, event, sub_type],
         )
         return len(result.fetchdf()) > 0
+
+    def filter_existing_bets(self, ev_filtered_response):
+        bets_to_check = {
+            (play.bet_desc, play.event_name, play.sub_market)
+            for play in ev_filtered_response
+        }
+
+        existing_bets = self.get_existing_bets(bets_to_check)
+
+        existing_bets_set = set(existing_bets)
+
+        filtered_response = [
+            play
+            for play in ev_filtered_response
+            if (play.bet_desc, play.event_name, play.sub_market)
+            not in existing_bets_set
+        ]
+
+        return filtered_response
+
+    @handle_database_errors
+    def get_existing_bets(self, bets_to_check):
+        #get 2 bets here for smaller subset to test
+        bets_list = list(bets_to_check)
+
+        conditions = " OR ".join(
+            ["(bet_name = ? AND event = ? AND sub_type = ?)"] * len(bets_list)
+        )
+        query = f"""
+            SELECT bet_name, event, sub_type 
+            FROM bets 
+            WHERE {conditions}
+        """
+        query_values = [item for sublist in bets_list for item in sublist] 
+        existing_bets = self.con.execute(query, query_values).fetchall()
+    
+        return existing_bets

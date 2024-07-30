@@ -113,6 +113,7 @@ def get_bet_menu(bet_controller, username):
                 username,
                 input(f"Enter Market {MATCHUP_BET_TYPES}: "),
                 float(input("Enter EV Threshold (0 to 1): ")),
+                input("New bets only? (y/n): "),
             ),
         ),
         "3": ("Get User Bets", lambda: print(bet_controller.get_user_bets(username))),
