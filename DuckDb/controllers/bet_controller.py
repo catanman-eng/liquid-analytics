@@ -91,16 +91,10 @@ class BetController:
         formatted_output = ""
 
         for play in ev_filtered_response:
-            book_color = BOOK_COLORS.get(
-                play.book, "white"
-            )  # Default to white if book not found
             formatted_output += f"{'-'*40}\n"  # Separator line for readability
 
             for key, value in play.model_dump().items():
-                if key == "book":
-                    formatted_value = Text(str(value), style=f"bold {book_color}")
-                else:
-                    formatted_value = Text(str(value))
+                formatted_value = Text(str(value))
                 formatted_output += (
                     f"{key.replace('_', ' ').title()}: {formatted_value}\n"
                 )
