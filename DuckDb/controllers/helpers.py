@@ -145,3 +145,22 @@ class Helper:
                     kelly=f"{kelly}u",
                     bet_size=f"${kelly*(bankroll/100)}",
                 )
+            elif odds_list["sub_bet_type"] == "round_matchups":
+                match player:
+                    case 1:
+                        bet_desc = f'{filtered_odd["p1_player_name"]} > {filtered_odd["p2_player_name"]}'
+                    case 2:
+                        bet_desc = f'{filtered_odd["p2_player_name"]} > {filtered_odd["p1_player_name"]}'
+                return Play(
+                    event_name=odds_list["event_name"],
+                    bet_desc=f"{bet_desc} | ties = {ties}",
+                    market=odds_list["bet_type"],
+                    sub_market=odds_list["sub_bet_type"],
+                    book=book_name,
+                    fair_odds=self.american_float_to_string(fair_odds),
+                    odds=self.american_float_to_string(play_odds),
+                    ev=round(ev * 100, 0),
+                    kelly=f"{kelly}u",
+                    bet_size=f"${kelly*(bankroll/100)}",
+                    round = f'R{odds_list["round_num"]}'
+                )

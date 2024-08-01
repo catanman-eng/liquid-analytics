@@ -363,6 +363,64 @@ class DataGolfAPI:
                         ties=ties,
                     )
                     filtered_plays.append(bet)
+            elif market == "round_matchups":
+                try:
+                    datagolf_odds = odds["odds"].get("datagolf", {})
+                    p1_fair_odds = float(datagolf_odds.get("p1", "0").replace("+", ""))
+                    p2_fair_odds = float(datagolf_odds.get("p2", "0").replace("+", ""))
+                except ValueError as e:
+                    print(f"Error extracting fair odds for {odds}: {e}")
+                    continue
+
+                book_odds = {
+                    book: {
+                        "p1": float(value["p1"].replace("+", "")),
+                        "p2": float(value["p2"].replace("+", "")),
+                    }
+                    for book, value in odds["odds"].items()
+                    if book != "datagolf"
+                }
+                book_name = next(iter(book_odds))
+                book_name_odds = book_odds[book_name]
+                p1_book_odds = book_name_odds["p1"]
+                p2_book_odds = book_name_odds["p2"]
+                ties = filtered_odd["ties"]
+
+                p1_kelly, p1_ev = self.helper.ev_check(
+                    p1_book_odds, p1_fair_odds, config, ev_threshold
+                )
+                p2_kelly, p2_ev = self.helper.ev_check(
+                    p2_book_odds, p2_fair_odds, config, ev_threshold
+                )
+
+                if p1_kelly:
+                    bet = self.helper.create_play(
+                        filtered_odd,
+                        matchups,
+                        book_name,
+                        p1_book_odds,
+                        p1_fair_odds,
+                        p1_ev,
+                        p1_kelly,
+                        config.bankroll,
+                        player=1,
+                        ties=ties,
+                    )
+                    filtered_plays.append(bet)
+                elif p2_kelly:
+                    bet = self.helper.create_play(
+                        filtered_odd,
+                        matchups,
+                        book_name,
+                        p2_book_odds,
+                        p2_fair_odds,
+                        p2_ev,
+                        p2_kelly,
+                        config.bankroll,
+                        player=2,
+                        ties=ties,
+                    )
+                    filtered_plays.append(bet)
 
         filtered_plays.sort(key=lambda x: x.ev, reverse=True)
 
