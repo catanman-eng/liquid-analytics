@@ -125,7 +125,7 @@ class Helper:
                     ev=round(ev * 100, 0),
                     kelly=f"{kelly}u",
                     bet_size=f"${kelly*(bankroll/100)}",
-                    round = f'R{odds_list["round_num"]}'
+                    round=f'R{odds_list["round_num"]}',
                 )
             elif odds_list["sub_bet_type"] == "tournament_matchups":
                 match player:
@@ -162,5 +162,5 @@ class Helper:
                     ev=round(ev * 100, 0),
                     kelly=f"{kelly}u",
                     bet_size=f"${kelly*(bankroll/100)}",
-                    round = f'R{odds_list["round_num"]}'
+                    round=f'R{odds_list["round_num"]}',
                 )
