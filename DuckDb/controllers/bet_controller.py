@@ -78,7 +78,16 @@ class BetController:
           """)
 
     # api actions
-    def get_outright_plays(self, username, bet_type, ev_threshold: float):
+    def get_outright_plays(
+        self, username, bet_type, ev_threshold: float, new: str = "n"
+    ):
+        if new == "n":
+            new = False
+        elif new == "y":
+            new = True
+        else:
+            raise ValueError("Invalid input for new bets only. Please enter 'y' or 'n'")
+
         if bet_type not in OUTRIGHT_BET_TYPES:
             raise ValueError(
                 f"Bet type {bet_type} not supported.\nSupported types: {OUTRIGHT_BET_TYPES}"
@@ -98,6 +107,10 @@ class BetController:
             user_config,
         )
 
+        if new:
+            ev_filtered_response = self.filter_existing_bets(ev_filtered_response)
+        if not ev_filtered_response:
+            print("No new plays found.")
         console = Console()
         for play in ev_filtered_response:
             # Separator line for readability
@@ -122,6 +135,7 @@ class BetController:
                 console.print(key_text, formatted_value)
 
             console.print(separator)
+        self.add_bet_list(ev_filtered_response, username)
 
     def get_matchup_plays(
         self, username, bet_type, ev_threshold: float, new: str = "n"
@@ -291,7 +305,6 @@ class BetController:
 
     @handle_database_errors
     def get_existing_bets(self, bets_to_check):
-        # get 2 bets here for smaller subset to test
         bets_list = list(bets_to_check)
 
         conditions = " OR ".join(
