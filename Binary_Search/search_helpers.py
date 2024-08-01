@@ -60,7 +60,7 @@ def run_search_algorithm(
     target: int,
     array: List[int],
     repeat_val: int = 3,
-    number: int =10,
+    number: int =5,
 ) -> float:
     """Runs the given search algorithm and returns the minimum execution time."""
     setup_code = f"from search_helpers import {algorithm.__name__}"
