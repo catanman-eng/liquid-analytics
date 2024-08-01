@@ -250,6 +250,7 @@ class DataGolfAPI:
                     p1_book_odds = book_odd["p1"]
                     p2_book_odds = book_odd["p2"]
                     p3_book_odds = book_odd["p3"]
+                    ties = filtered_odd["ties"]
                     book_name = book_name
 
                     p1_kelly, p1_ev = self.helper.ev_check(
@@ -272,7 +273,8 @@ class DataGolfAPI:
                             p1_ev,
                             p1_kelly,
                             config.bankroll,
-                            player = 1
+                            player=1,
+                            ties=ties,
                         )
                         filtered_plays.append(bet)
                     if p2_kelly:
@@ -285,7 +287,8 @@ class DataGolfAPI:
                             p2_ev,
                             p2_kelly,
                             config.bankroll,
-                            player = 2
+                            player=2,
+                            ties=ties,
                         )
                         filtered_plays.append(bet)
                     if p3_kelly:
@@ -298,7 +301,8 @@ class DataGolfAPI:
                             p3_ev,
                             p3_kelly,
                             config.bankroll,
-                            player = 3
+                            player=3,
+                            ties=ties,
                         )
                         filtered_plays.append(bet)
             elif market == "tournament_matchups":
@@ -322,6 +326,7 @@ class DataGolfAPI:
                 book_name_odds = book_odds[book_name]
                 p1_book_odds = book_name_odds["p1"]
                 p2_book_odds = book_name_odds["p2"]
+                ties = filtered_odd["ties"]
 
                 p1_kelly, p1_ev = self.helper.ev_check(
                     p1_book_odds, p1_fair_odds, config, ev_threshold
@@ -341,6 +346,7 @@ class DataGolfAPI:
                         p1_kelly,
                         config.bankroll,
                         player=1,
+                        ties=ties,
                     )
                     filtered_plays.append(bet)
                 elif p2_kelly:
@@ -354,6 +360,7 @@ class DataGolfAPI:
                         p2_kelly,
                         config.bankroll,
                         player=2,
+                        ties=ties,
                     )
                     filtered_plays.append(bet)
 

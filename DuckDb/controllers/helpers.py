@@ -13,6 +13,7 @@ class Play(BaseModel):
     kelly: str = "0u"
     bet_size: str = "$0"
     event_name: str
+    round: str = None
 
 
 class Helper:
@@ -88,6 +89,7 @@ class Helper:
         kelly,
         bankroll,
         player=None,
+        ties=None,
     ):
         if odds_list["bet_type"] == "outright":
             return Play(
@@ -114,7 +116,7 @@ class Helper:
 
                 return Play(
                     event_name=odds_list["event_name"],
-                    bet_desc=bet_desc,
+                    bet_desc=f"{bet_desc} | Ties = {ties}",
                     market=odds_list["bet_type"],
                     sub_market=odds_list["sub_bet_type"],
                     book=book_name,
@@ -123,6 +125,7 @@ class Helper:
                     ev=round(ev * 100, 0),
                     kelly=f"{kelly}u",
                     bet_size=f"${kelly*(bankroll/100)}",
+                    round = f'R{odds_list["round_num"]}'
                 )
             elif odds_list["sub_bet_type"] == "tournament_matchups":
                 match player:
@@ -132,7 +135,7 @@ class Helper:
                         bet_desc = f'{filtered_odd["p2_player_name"]} > {filtered_odd["p1_player_name"]}'
                 return Play(
                     event_name=odds_list["event_name"],
-                    bet_desc=bet_desc,
+                    bet_desc=f"{bet_desc} | ties = {ties}",
                     market=odds_list["bet_type"],
                     sub_market=odds_list["sub_bet_type"],
                     book=book_name,
