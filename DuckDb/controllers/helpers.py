@@ -95,8 +95,8 @@ class Helper:
             return Play(
                 event_name=odds_list["event_name"],
                 bet_desc=f"{filtered_odd['player_name']}: {odds_list['sub_bet_type'].title()}",
-                market=odds_list["market"],
-                sub_market=filtered_odd["sub_market"],
+                market=odds_list["bet_type"],
+                sub_market=odds_list["sub_bet_type"],
                 book=book_name,
                 fair_odds=self.american_float_to_string(fair_odds),
                 odds=play_odds,
