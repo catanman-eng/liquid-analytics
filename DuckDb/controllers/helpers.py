@@ -1,4 +1,19 @@
 import uuid
+from pydantic import BaseModel
+
+
+class Play(BaseModel):
+    book: str
+    bet_desc: str
+    market: str
+    sub_market: str
+    ev: float
+    odds: str
+    fair_odds: str
+    kelly: str = "0u"
+    bet_size: str = "$0"
+    event_name: str
+    round: str = None
 
 
 class Helper:
@@ -47,8 +62,105 @@ class Helper:
         q = 1 - p
         b = self.american_profit(bet_odds, 100.0) / 100.0
         return (p - (q / b)) * multiplier * 100.0
-    
+
     def american_float_to_string(self, odds: float) -> str:
         if odds > 0:
             return f"+{odds:.0f}"
         return f"{odds:.0f}"
+
+    def ev_check(self, book_odds, fair_odds, config, threshold):
+        ev = self.ev(book_odds, fair_odds)
+        if ev > threshold:
+            kelly = round(
+                self.kelly_stake(book_odds, fair_odds, config.kelly_multiplier), 2
+            )
+            return kelly, ev
+        else:
+            return None, None
+
+    def create_play(
+        self,
+        filtered_odd,
+        odds_list,
+        book_name,
+        play_odds,
+        fair_odds,
+        ev,
+        kelly,
+        bankroll,
+        player=None,
+        ties=None,
+    ):
+        if odds_list["bet_type"] == "outright":
+            return Play(
+                event_name=odds_list["event_name"],
+                bet_desc=f"{filtered_odd['player_name']}: {odds_list['sub_bet_type'].title()}",
+                market=odds_list["market"],
+                sub_market=filtered_odd["sub_market"],
+                book=book_name,
+                fair_odds=self.american_float_to_string(fair_odds),
+                odds=play_odds,
+                ev=round(ev * 100, 0),
+                kelly=f"{kelly}u",
+                bet_size=f"${kelly*(bankroll/100)}",
+            )
+        else:
+            if odds_list["sub_bet_type"] == "3_balls":
+                match player:
+                    case 1:
+                        bet_desc = f'{filtered_odd["p1_player_name"]} > {filtered_odd["p2_player_name"]}, {filtered_odd["p3_player_name"]}'
+                    case 2:
+                        bet_desc = f'{filtered_odd["p2_player_name"]} > {filtered_odd["p1_player_name"]}, {filtered_odd["p3_player_name"]}'
+                    case 3:
+                        bet_desc = f'{filtered_odd["p3_player_name"]} > {filtered_odd["p1_player_name"]}, {filtered_odd["p2_player_name"]}'
+
+                return Play(
+                    event_name=odds_list["event_name"],
+                    bet_desc=f"{bet_desc} | Ties = {ties}",
+                    market=odds_list["bet_type"],
+                    sub_market=odds_list["sub_bet_type"],
+                    book=book_name,
+                    fair_odds=self.american_float_to_string(fair_odds),
+                    odds=self.american_float_to_string(play_odds),
+                    ev=round(ev * 100, 0),
+                    kelly=f"{kelly}u",
+                    bet_size=f"${kelly*(bankroll/100)}",
+                    round = f'R{odds_list["round_num"]}'
+                )
+            elif odds_list["sub_bet_type"] == "tournament_matchups":
+                match player:
+                    case 1:
+                        bet_desc = f'{filtered_odd["p1_player_name"]} > {filtered_odd["p2_player_name"]}'
+                    case 2:
+                        bet_desc = f'{filtered_odd["p2_player_name"]} > {filtered_odd["p1_player_name"]}'
+                return Play(
+                    event_name=odds_list["event_name"],
+                    bet_desc=f"{bet_desc} | ties = {ties}",
+                    market=odds_list["bet_type"],
+                    sub_market=odds_list["sub_bet_type"],
+                    book=book_name,
+                    fair_odds=self.american_float_to_string(fair_odds),
+                    odds=self.american_float_to_string(play_odds),
+                    ev=round(ev * 100, 0),
+                    kelly=f"{kelly}u",
+                    bet_size=f"${kelly*(bankroll/100)}",
+                )
+            elif odds_list["sub_bet_type"] == "round_matchups":
+                match player:
+                    case 1:
+                        bet_desc = f'{filtered_odd["p1_player_name"]} > {filtered_odd["p2_player_name"]}'
+                    case 2:
+                        bet_desc = f'{filtered_odd["p2_player_name"]} > {filtered_odd["p1_player_name"]}'
+                return Play(
+                    event_name=odds_list["event_name"],
+                    bet_desc=f"{bet_desc} | ties = {ties}",
+                    market=odds_list["bet_type"],
+                    sub_market=odds_list["sub_bet_type"],
+                    book=book_name,
+                    fair_odds=self.american_float_to_string(fair_odds),
+                    odds=self.american_float_to_string(play_odds),
+                    ev=round(ev * 100, 0),
+                    kelly=f"{kelly}u",
+                    bet_size=f"${kelly*(bankroll/100)}",
+                    round = f'R{odds_list["round_num"]}'
+                )

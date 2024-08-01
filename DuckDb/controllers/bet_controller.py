@@ -60,7 +60,8 @@ class BetController:
                 event VARCHAR,
                 kelly decimal,
                 ev_percent decimal,
-                UNIQUE (bet_name, event, sub_type)                  
+                round VARCHAR NULL,
+                UNIQUE (bet_name, event, sub_type, round)                  
               )
           """)
 
@@ -199,9 +200,9 @@ class BetController:
             bet_ids.append(bet_id)
             self.con.execute(
                 """
-                INSERT INTO bets (id, book_id, new, type, sub_type, book_odds, datagolf_odds, bet_name, event, kelly, ev_percent)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (bet_name, event, sub_type)
+                INSERT INTO bets (id, book_id, new, type, sub_type, book_odds, datagolf_odds, bet_name, event, kelly, ev_percent, round)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (bet_name, event, sub_type, round)
                 DO NOTHING
                 """,
                 [
@@ -216,6 +217,7 @@ class BetController:
                     bet.event_name,
                     float(bet.kelly.replace("u", "")),
                     bet.ev,
+                    bet.round,
                 ],
             )
         self.add_user_bets(user_id, bet_ids)
@@ -234,7 +236,7 @@ class BetController:
         user_id = self.user_controller.get_user_id(username)
         result = self.con.execute(
             """
-            SELECT b.bet_name, b.event, b.type, b.sub_type, b.book_odds, b.datagolf_odds, b.kelly, b.ev_percent
+            SELECT b.bet_name, b.event, b.type, b.sub_type, b.book_odds, b.datagolf_odds, b.kelly, b.ev_percent, b.round
             FROM user_bets ub
             JOIN bets b ON ub.bet_id = b.id
             WHERE ub.user_id = ?
@@ -289,7 +291,7 @@ class BetController:
 
     @handle_database_errors
     def get_existing_bets(self, bets_to_check):
-        #get 2 bets here for smaller subset to test
+        # get 2 bets here for smaller subset to test
         bets_list = list(bets_to_check)
 
         conditions = " OR ".join(
@@ -300,7 +302,7 @@ class BetController:
             FROM bets 
             WHERE {conditions}
         """
-        query_values = [item for sublist in bets_list for item in sublist] 
+        query_values = [item for sublist in bets_list for item in sublist]
         existing_bets = self.con.execute(query, query_values).fetchall()
-    
+
         return existing_bets

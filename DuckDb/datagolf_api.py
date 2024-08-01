@@ -3,22 +3,8 @@ from db_manager import DBManager
 from controllers.user_controller import UserController
 from controllers.book_controller import BookController
 from controllers.user_config_controller import UserConfig
-from controllers.helpers import Helper
+from controllers.helpers import Helper, Play
 from typing import List
-from pydantic import BaseModel
-
-
-class Play(BaseModel):
-    book: str
-    bet_desc: str
-    market: str
-    sub_market: str
-    ev: float
-    odds: str
-    fair_odds: str
-    kelly: str = "0u"
-    bet_size: str = "$0"
-    event_name: str
 
 
 class DataGolfAPI:
@@ -110,7 +96,7 @@ class DataGolfAPI:
                 "p1_player_name",
                 "p2_player_name",
                 "p3_player_name",
-                "round_num",
+                "ties",
             ]
         elif sub_market == "round_matchups":
             always_keep_keys = [
@@ -118,7 +104,7 @@ class DataGolfAPI:
                 "player_name",
                 "p1_player_name",
                 "p2_player_name",
-                "round_num",
+                "ties",
             ]
 
         filtered_matchup_list = []
@@ -150,6 +136,8 @@ class DataGolfAPI:
             "odds": filtered_matchup_list,
         }
 
+        if matchup_response.get("round_num", None):
+            result["round_num"] = matchup_response["round_num"]
         return result
 
     def filter_by_ev(self, odds_list, ev_threshold, config: UserConfig) -> List[Play]:
@@ -174,32 +162,23 @@ class DataGolfAPI:
                         fair_odds = float(
                             odd["datagolf"]["baseline_history_fit"].replace("+", "")
                         )
-                        ev = self.helper.ev(bet_odds, fair_odds)
                     except AttributeError:
                         print(f"Error calculating EV for {odd['player_name']}")
-                        ev = 0
 
-                    if ev > ev_threshold:
+                    kelly, ev = self.helper.ev_check(
+                        bet_odds, fair_odds, config, ev_threshold
+                    )
+                    if kelly:
                         filtered_odd[key] = value
-                        kelly = round(
-                            self.helper.kelly_stake(
-                                bet_odds,
-                                fair_odds,
-                                config.kelly_multiplyer,
-                            ),
-                            2,
-                        )
-                        bet = Play(
-                            event_name=odds_list["event_name"],
-                            bet_desc=f"{filtered_odd['player_name']}: {odds_list['sub_bet_type'].title()}",
-                            market=odds_list["bet_type"],
-                            sub_market=odds_list["sub_bet_type"],
-                            book=key,
-                            fair_odds=self.helper.american_float_to_string(fair_odds),
-                            odds=value,
-                            ev=round(ev * 100, 0),
-                            kelly=f"{kelly}u",
-                            bet_size=f"${kelly*(config.bankroll/100)}",
+                        bet = self.helper.create_play(
+                            filtered_odd,
+                            odds_list,
+                            key,
+                            value,
+                            fair_odds,
+                            ev,
+                            kelly,
+                            config.bankroll,
                         )
                         filtered_plays.append(bet)
 
@@ -232,7 +211,7 @@ class DataGolfAPI:
                     "p1_player_name",
                     "p2_player_name",
                     "p3_player_name",
-                    "round_num",
+                    "ties",
                 ]
             elif market == "round_matchups":
                 always_keep_keys = [
@@ -240,15 +219,92 @@ class DataGolfAPI:
                     "player_name",
                     "p1_player_name",
                     "p2_player_name",
-                    "round_num",
+                    "ties",
                 ]
 
             filtered_odd = {
                 key: value for key, value in odds.items() if key in always_keep_keys
             }
 
-            if market == "3_balls" or market == "round_matchups":
-                pass
+            if market == "3_balls":
+                try:
+                    datagolf_odds = odds["odds"].get("datagolf", {})
+                    p1_fair_odds = float(datagolf_odds.get("p1", "0").replace("+", ""))
+                    p2_fair_odds = float(datagolf_odds.get("p2", "0").replace("+", ""))
+                    p3_fair_odds = float(datagolf_odds.get("p3", "0").replace("+", ""))
+                except ValueError as e:
+                    print(f"Error extracting fair odds for {odds}: {e}")
+                    continue
+
+                book_odds = {
+                    book: {
+                        "p1": float(value["p1"].replace("+", "")),
+                        "p2": float(value["p2"].replace("+", "")),
+                        "p3": float(value["p3"].replace("+", "")),
+                    }
+                    for book, value in odds["odds"].items()
+                    if book != "datagolf"
+                }
+
+                for book_name, book_odd in book_odds.items():
+                    p1_book_odds = book_odd["p1"]
+                    p2_book_odds = book_odd["p2"]
+                    p3_book_odds = book_odd["p3"]
+                    ties = filtered_odd["ties"]
+                    book_name = book_name
+
+                    p1_kelly, p1_ev = self.helper.ev_check(
+                        p1_book_odds, p1_fair_odds, config, ev_threshold
+                    )
+                    p2_kelly, p2_ev = self.helper.ev_check(
+                        p2_book_odds, p2_fair_odds, config, ev_threshold
+                    )
+                    p3_kelly, p3_ev = self.helper.ev_check(
+                        p3_book_odds, p3_fair_odds, config, ev_threshold
+                    )
+
+                    if p1_kelly:
+                        bet = self.helper.create_play(
+                            filtered_odd,
+                            matchups,
+                            book_name,
+                            p1_book_odds,
+                            p1_fair_odds,
+                            p1_ev,
+                            p1_kelly,
+                            config.bankroll,
+                            player=1,
+                            ties=ties,
+                        )
+                        filtered_plays.append(bet)
+                    if p2_kelly:
+                        bet = self.helper.create_play(
+                            filtered_odd,
+                            matchups,
+                            book_name,
+                            p2_book_odds,
+                            p2_fair_odds,
+                            p2_ev,
+                            p2_kelly,
+                            config.bankroll,
+                            player=2,
+                            ties=ties,
+                        )
+                        filtered_plays.append(bet)
+                    if p3_kelly:
+                        bet = self.helper.create_play(
+                            filtered_odd,
+                            matchups,
+                            book_name,
+                            p3_book_odds,
+                            p3_fair_odds,
+                            p3_ev,
+                            p3_kelly,
+                            config.bankroll,
+                            player=3,
+                            ties=ties,
+                        )
+                        filtered_plays.append(bet)
             elif market == "tournament_matchups":
                 try:
                     datagolf_odds = odds["odds"].get("datagolf", {})
@@ -270,52 +326,99 @@ class DataGolfAPI:
                 book_name_odds = book_odds[book_name]
                 p1_book_odds = book_name_odds["p1"]
                 p2_book_odds = book_name_odds["p2"]
+                ties = filtered_odd["ties"]
 
-                p1_ev = self.helper.ev(p1_book_odds, p1_fair_odds)
-                p2_ev = self.helper.ev(p2_book_odds, p2_fair_odds)
+                p1_kelly, p1_ev = self.helper.ev_check(
+                    p1_book_odds, p1_fair_odds, config, ev_threshold
+                )
+                p2_kelly, p2_ev = self.helper.ev_check(
+                    p2_book_odds, p2_fair_odds, config, ev_threshold
+                )
 
-                if p1_ev > ev_threshold:
-                    kelly = round(
-                        self.helper.kelly_stake(
-                            p1_book_odds,
-                            p1_fair_odds,
-                            config.kelly_multiplyer,
-                        ),
-                        2,
-                    )
-                    bet = Play(
-                        event_name=matchups["event_name"],
-                        bet_desc=f'{filtered_odd["p1_player_name"]} > {filtered_odd["p2_player_name"]}',
-                        market=matchups["bet_type"],
-                        sub_market=matchups["sub_bet_type"],
-                        book=next(iter(book_odds)),
-                        odds=self.helper.american_float_to_string(p1_book_odds),
-                        ev=round(p1_ev * 100, 0),
-                        kelly=f"{kelly}u",
-                        bet_size=f"${kelly*(config.bankroll/100)}",
-                        fair_odds=self.helper.american_float_to_string(p1_fair_odds),
+                if p1_kelly:
+                    bet = self.helper.create_play(
+                        filtered_odd,
+                        matchups,
+                        book_name,
+                        p1_book_odds,
+                        p1_fair_odds,
+                        p1_ev,
+                        p1_kelly,
+                        config.bankroll,
+                        player=1,
+                        ties=ties,
                     )
                     filtered_plays.append(bet)
-                elif p2_ev > ev_threshold:
-                    kelly = round(
-                        self.helper.kelly_stake(
-                            p2_book_odds,
-                            p2_fair_odds,
-                            config.kelly_multiplyer,
-                        ),
-                        2,
+                elif p2_kelly:
+                    bet = self.helper.create_play(
+                        filtered_odd,
+                        matchups,
+                        book_name,
+                        p2_book_odds,
+                        p2_fair_odds,
+                        p2_ev,
+                        p2_kelly,
+                        config.bankroll,
+                        player=2,
+                        ties=ties,
                     )
-                    bet = Play(
-                        event_name=matchups["event_name"],
-                        bet_desc=f'{filtered_odd["p2_player_name"]} > {filtered_odd["p1_player_name"]}',
-                        market=matchups["bet_type"],
-                        sub_market=matchups["sub_bet_type"],
-                        book=next(iter(book_odds)),
-                        odds=self.helper.american_float_to_string(p2_book_odds),
-                        ev=round(p2_ev * 100, 0),
-                        kelly=f"{kelly}u",
-                        bet_size=f"${kelly*(config.bankroll/100)}",
-                        fair_odds=self.helper.american_float_to_string(p2_fair_odds),
+                    filtered_plays.append(bet)
+            elif market == "round_matchups":
+                try:
+                    datagolf_odds = odds["odds"].get("datagolf", {})
+                    p1_fair_odds = float(datagolf_odds.get("p1", "0").replace("+", ""))
+                    p2_fair_odds = float(datagolf_odds.get("p2", "0").replace("+", ""))
+                except ValueError as e:
+                    print(f"Error extracting fair odds for {odds}: {e}")
+                    continue
+
+                book_odds = {
+                    book: {
+                        "p1": float(value["p1"].replace("+", "")),
+                        "p2": float(value["p2"].replace("+", "")),
+                    }
+                    for book, value in odds["odds"].items()
+                    if book != "datagolf"
+                }
+                book_name = next(iter(book_odds))
+                book_name_odds = book_odds[book_name]
+                p1_book_odds = book_name_odds["p1"]
+                p2_book_odds = book_name_odds["p2"]
+                ties = filtered_odd["ties"]
+
+                p1_kelly, p1_ev = self.helper.ev_check(
+                    p1_book_odds, p1_fair_odds, config, ev_threshold
+                )
+                p2_kelly, p2_ev = self.helper.ev_check(
+                    p2_book_odds, p2_fair_odds, config, ev_threshold
+                )
+
+                if p1_kelly:
+                    bet = self.helper.create_play(
+                        filtered_odd,
+                        matchups,
+                        book_name,
+                        p1_book_odds,
+                        p1_fair_odds,
+                        p1_ev,
+                        p1_kelly,
+                        config.bankroll,
+                        player=1,
+                        ties=ties,
+                    )
+                    filtered_plays.append(bet)
+                elif p2_kelly:
+                    bet = self.helper.create_play(
+                        filtered_odd,
+                        matchups,
+                        book_name,
+                        p2_book_odds,
+                        p2_fair_odds,
+                        p2_ev,
+                        p2_kelly,
+                        config.bankroll,
+                        player=2,
+                        ties=ties,
                     )
                     filtered_plays.append(bet)
 

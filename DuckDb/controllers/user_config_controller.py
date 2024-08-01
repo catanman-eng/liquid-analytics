@@ -7,7 +7,7 @@ import uuid
 
 class UserConfig(BaseModel):
     user_id: uuid.UUID
-    kelly_multiplyer: float
+    kelly_multiplier: float
     bankroll: int
 
 
@@ -63,7 +63,7 @@ class UserConfigController:
         record = result.fetchone()
         if record:
             config = UserConfig(
-                user_id=user_id, kelly_multiplyer=record[1], bankroll=record[2]
+                user_id=user_id, kelly_multiplier=record[1], bankroll=record[2]
             )
         else:
             print(f"User {username} has no config")
@@ -72,7 +72,7 @@ class UserConfigController:
         return config
 
     @handle_database_errors
-    def update_user_config(self, username, kelly_multiplyer, bankroll):
+    def update_user_config(self, username, kelly_multiplier, bankroll):
         user_id = self.user_controller.get_user_id(username)
         user = self.user_controller.get_user(user_id)
 
@@ -81,7 +81,7 @@ class UserConfigController:
             return
 
         config = UserConfig(
-            user_id=user.id, kelly_multiplyer=kelly_multiplyer, bankroll=bankroll
+            user_id=user.id, kelly_multiplier=kelly_multiplier, bankroll=bankroll
         )
 
         if user.config_id is not None:
