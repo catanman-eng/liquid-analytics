@@ -13,8 +13,8 @@ DB_FILE = "datagolf.db"
 
 def main():
     # Create a DuckDB connection
-    db = DBManager(DB_FILE)
-    con = db.connect()
+    db = DBManager()
+    con = db.download_db_from_s3()
     try:
         # Instantiate API
         api = DataGolfAPI(API_KEY, con, db)
