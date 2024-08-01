@@ -31,7 +31,7 @@ def main():
 
             if username.lower() == "exit":
                 print("Exiting application.")
-                break
+                exit()
 
             if user_controller.check_user_exists(username):
                 print(f"Welcome back, {username}!")

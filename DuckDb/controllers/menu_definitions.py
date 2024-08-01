@@ -105,6 +105,7 @@ def get_bet_menu(bet_controller, username):
                 username,
                 input(f"Enter Market ({OUTRIGHT_BET_TYPES}): "),
                 float(input("Enter EV Threshold (0 to 1): ")),
+                input("New bets only? (y/n): "),
             ),
         ),
         "2": (
