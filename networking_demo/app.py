@@ -13,7 +13,7 @@ DB_SECRET_NAME = os.getenv("DB_SECRET_NAME")
 
 def get_db_connection(secret_name):
     config = Config(region_name="ca-central-1")
-    client = boto3.client("secretsmanager",)
+    client = boto3.client("secretsmanager", config=config)
     response = client.get_secret_value(SecretId=secret_name)
     secret = json.loads(response["SecretString"])
 
