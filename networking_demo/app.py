@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 import psycopg2  # Use mysql.connector for MySQL
 import boto3
+from botocore.config import Config
 import json
 import os
 
@@ -11,7 +12,8 @@ DB_NAME = os.getenv("DB_NAME")
 DB_SECRET_NAME = os.getenv("DB_SECRET_NAME")
 
 def get_db_connection(secret_name):
-    client = boto3.client("secretsmanager")
+    config = Config(region_name="ca-central-1")
+    client = boto3.client("secretsmanager",)
     response = client.get_secret_value(SecretId=secret_name)
     secret = json.loads(response["SecretString"])
 
