@@ -35,7 +35,6 @@ def index():
 
 
 @app.route("/data", methods=["GET"])
-@app.route("/data", methods=["GET"])
 def get_data():
     try:
         conn = get_db_connection(DB_SECRET_NAME)
