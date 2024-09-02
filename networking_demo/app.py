@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 DB_HOST = os.getenv("DB_HOST")  
 DB_NAME = os.getenv("DB_NAME") 
-
+DB_SECRET_NAME = os.getenv("DB_SECRET_NAME")
 
 def get_db_connection(secret_name):
     client = boto3.client("secretsmanager")
@@ -33,14 +33,18 @@ def index():
 
 
 @app.route("/data", methods=["GET"])
+@app.route("/data", methods=["GET"])
 def get_data():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT CURRENT_TIMESTAMP;")
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return jsonify(rows)
+    try:
+        conn = get_db_connection(DB_SECRET_NAME)
+        cur = conn.cursor()
+        cur.execute("SELECT CURRENT_TIMESTAMP;")
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(rows)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 if __name__ == "__main__":
