@@ -36,7 +36,7 @@ def index():
 def get_data():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * CURRENT_TIMESTAMP;")
+    cur.execute("SELECT CURRENT_TIMESTAMP;")
     rows = cur.fetchall()
     cur.close()
     conn.close()
