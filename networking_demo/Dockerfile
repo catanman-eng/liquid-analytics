@@ -11,7 +11,7 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy .env file into directory
-COPY .env .env
+COPY .env_vars .env
 
 # Make port 80 available to the world outside this container
 EXPOSE 80
