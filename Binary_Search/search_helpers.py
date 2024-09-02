@@ -7,7 +7,7 @@ def binary_search(target: int, arr: List[int]) -> int:
     """Performs binary search on a sorted array to find the target."""
     left = 0
     right = len(arr) - 1
-
+    
     while left <= right:
         mid = left + (right - left) // 2
 

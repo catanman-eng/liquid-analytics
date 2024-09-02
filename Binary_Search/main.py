@@ -14,6 +14,7 @@ def main():
     # Sorted array of length n
     n, target = get_user_input()    
     sorted_array = [i for i in range(n)]
+    sorted_array = sorted(sorted_array)
 
     table = Table(title=f"Min Execution Time to Find Target {target} in Sorted Array of Length {n}")
     table.add_column("Algorithm")
