@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 import psycopg2  # Use mysql.connector for MySQL
 import boto3
 from botocore.config import Config
@@ -31,7 +31,7 @@ def get_db_connection(secret_name):
 
 @app.route("/")
 def index():
-    return "Welcome to my Flask API!"
+    return send_from_directory(".", "index.html")
 
 
 @app.route("/data", methods=["GET"])
@@ -49,4 +49,4 @@ def get_data():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80)
+    app.run(debug=True)
