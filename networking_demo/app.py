@@ -33,7 +33,6 @@ def get_db_connection(secret_name):
 def index():
     return send_from_directory(".", "index.html")
 
-
 @app.route("/data", methods=["GET"])
 def get_data():
     try:
@@ -46,7 +45,6 @@ def get_data():
         return jsonify(rows)
     except Exception as e:
         return jsonify({"error": str(e)})
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
