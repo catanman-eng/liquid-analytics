@@ -1,6 +1,7 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 import psycopg2  # Use mysql.connector for MySQL
 import boto3
+from botocore.config import Config
 import json
 import os
 
@@ -8,10 +9,11 @@ app = Flask(__name__)
 
 DB_HOST = os.getenv("DB_HOST")  
 DB_NAME = os.getenv("DB_NAME") 
-
+DB_SECRET_NAME = os.getenv("DB_SECRET_NAME")
 
 def get_db_connection(secret_name):
-    client = boto3.client("secretsmanager")
+    config = Config(region_name="ca-central-1")
+    client = boto3.client("secretsmanager", config=config)
     response = client.get_secret_value(SecretId=secret_name)
     secret = json.loads(response["SecretString"])
 
@@ -29,18 +31,21 @@ def get_db_connection(secret_name):
 
 @app.route("/")
 def index():
-    return "Welcome to my Flask API!"
+    return send_from_directory(".", "index.html")
 
 
 @app.route("/data", methods=["GET"])
 def get_data():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * CURRENT_TIMESTAMP;")
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return jsonify(rows)
+    try:
+        conn = get_db_connection(DB_SECRET_NAME)
+        cur = conn.cursor()
+        cur.execute("SELECT CURRENT_TIMESTAMP;")
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(rows)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 if __name__ == "__main__":
