@@ -1,6 +1,3 @@
-# liquid-analytics
-Repo containing work for liquid analytics tech interview
-
 ## Binary Search Gameplan
 1. Research/Gain understanding of underlying math, time complexity, Big O notation and the logic behind the search
 2. Write basic script that performs a binary search
